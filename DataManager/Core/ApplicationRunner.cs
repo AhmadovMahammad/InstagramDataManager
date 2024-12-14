@@ -1,6 +1,8 @@
-﻿using DataManager.Constants;
+﻿using ConsoleTables;
+using DataManager.Constants;
 using DataManager.Constants.Enums;
 using DataManager.Helpers.Extensions;
+using DataManager.Models;
 
 namespace DataManager.Core;
 public class ApplicationRunner(ICommandHandler handler)
@@ -49,14 +51,9 @@ public class ApplicationRunner(ICommandHandler handler)
     {
         if (_displayMenu)
         {
-            Console.WriteLine("\n============================================");
-            Console.WriteLine("            Available Operations            ");
-            Console.WriteLine("============================================\n");
-
-            foreach (var operation in AppConstant.AvailableOperations)
-            {
-                Console.WriteLine($"{operation.Key}. {operation.Value.action}: {operation.Value.description}");
-            }
+            AppConstant.AvailableOperations
+                .Select(op => new MenuModel { Key = op.Key, Action = op.Value.action, Description = op.Value.description })
+                .DisplayAsTable(Format.Minimal, "Key", "Action", "Description");
         }
     }
 

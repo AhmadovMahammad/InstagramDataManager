@@ -1,15 +1,12 @@
-﻿using DataManager.Models;
+﻿using ConsoleTables;
+using DataManager.Helpers.Extensions;
+using DataManager.Models;
 
 namespace DataManager.Handlers;
 public class BaseHandler
 {
     public void DisplayInView(IEnumerable<RelationshipData> relationshipData)
     {
-        //var enumerator = relationshipData.GetEnumerator();
-        //while (enumerator.MoveNext())
-        //{
-        //    var x = enumerator.Current;
-        //    x.StringListData.ForEach(sld => sld.Href.WriteMessage(MessageType.Info));
-        //}
+        relationshipData.DisplayAsTable<RelationshipData>(Format.Default, "Title", "Href", "Value", "Timestamp");
     }
 }

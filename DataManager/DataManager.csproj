@@ -8,12 +8,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Folder Include="Helpers\Validators\" />
-		<Folder Include="Services\Contracts\" />
-		<Folder Include="Services\Automation\" />
-	</ItemGroup>
-
-	<ItemGroup>
+		<PackageReference Include="ConsoleTables" Version="2.6.2" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 	</ItemGroup>

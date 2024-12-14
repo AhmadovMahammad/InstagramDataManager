@@ -1,4 +1,6 @@
-﻿using DataManager.Constants.Enums;
+﻿using ConsoleTables;
+using DataManager.Constants.Enums;
+using System.Reflection;
 
 namespace DataManager.Helpers.Extensions;
 public static class ConsoleExtension
@@ -21,5 +23,18 @@ public static class ConsoleExtension
 
         Console.WriteLine(message);
         Console.ForegroundColor = originalColor; // Reset to original color
+    }
+
+    public static void DisplayAsTable<T>(this IEnumerable<T> data, Format format = Format.Default, params string[] columnNames)
+    {
+        ConsoleTable table = new ConsoleTable(columnNames);
+
+        foreach (var child in data)
+        {
+            PropertyInfo[] properties = child?.GetType().GetProperties() ?? [];
+            table.AddRow(properties.Select(prop => prop.GetValue(child)?.ToString()).ToArray());
+        }
+
+        table.Write(format);
     }
 }
