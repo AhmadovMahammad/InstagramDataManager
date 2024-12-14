@@ -36,7 +36,6 @@ public class ApplicationRunner(ICommandHandler handler)
                     _displayMenu = false;
                     ex.Message.WriteMessage(MessageType.Error);
                 }
-
             }
             else if (!string.IsNullOrWhiteSpace(input) && input != "exit")
             {

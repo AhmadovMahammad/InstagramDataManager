@@ -1,6 +1,7 @@
-﻿namespace DataManager.DesignPatterns.StrategyDP.Contracts;
+﻿using DataManager.Models;
+
+namespace DataManager.DesignPatterns.StrategyDP.Contracts;
 public interface IFileFormatStrategy
 {
-    // todo: return one model or something else
-    void ProcessFile(string filePath);
+    RelationshipData ProcessFile(string filePath, string rootElementPath);
 }

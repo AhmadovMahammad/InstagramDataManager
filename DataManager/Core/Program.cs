@@ -8,6 +8,16 @@ internal class Program
 
     private static void Main(string[] args)
     {
+        using Mutex mutex = new Mutex(true, @"Global\InstagramDataManager");
+
+        // Try to acquire the mutex for up to 3 seconds.
+        if (!mutex.WaitOne(TimeSpan.FromSeconds(3)))
+        {
+            Console.WriteLine("Another instance of the app is running! Press Any Key To Exit...");
+            Console.ReadKey();
+            return;
+        }
+
         CreateHostBuilder(args);
         GetRequiredService<ApplicationRunner>().Run();
     }

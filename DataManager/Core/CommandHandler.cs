@@ -26,7 +26,7 @@ public class CommandHandler : ICommandHandler // Routes command-line inputs to t
     {
         // First, check if the operation handler exists for the given operationType.
         // If the handler is null, exit early without needing user input.
-        var operationHandler = OperationFactory.CreateHandler(operationType, string.Empty);
+        var operationHandler = OperationFactory.CreateHandler(operationType);
         if (operationHandler is null)
         {
             $"There is currently no support for operation: {operationType}".WriteMessage(MessageType.Warning);
@@ -54,7 +54,7 @@ public class CommandHandler : ICommandHandler // Routes command-line inputs to t
         try
         {
             // Execute the operation handler with the appropriate file format strategy
-            operationHandler.Execute(fileFormatStrategy);
+            operationHandler.Execute(filePath, fileFormatStrategy);
         }
         catch (Exception ex)
         {

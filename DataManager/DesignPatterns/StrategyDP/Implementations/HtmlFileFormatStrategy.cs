@@ -1,10 +1,14 @@
-﻿using DataManager.DesignPatterns.StrategyDP.Contracts;
+﻿using DataManager.Constants.Enums;
+using DataManager.DesignPatterns.StrategyDP.Contracts;
+using DataManager.Helpers.Extensions;
+using DataManager.Models;
 
 namespace DataManager.DesignPatterns.StrategyDP.Implementations;
 public class HtmlFileFormatStrategy : IFileFormatStrategy
 {
-    public void ProcessFile(string filePath)
+    public RelationshipData ProcessFile(string filePath, string rootElementPath)
     {
-        Console.WriteLine("Processing HTML file: " + filePath);
+        $"Processing HTML file: {filePath}".WriteMessage(MessageType.Info);
+        return new();
     }
 }

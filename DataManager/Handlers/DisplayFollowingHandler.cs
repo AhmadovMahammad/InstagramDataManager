@@ -1,10 +1,11 @@
 ﻿using DataManager.DesignPatterns.StrategyDP.Contracts;
+using DataManager.Models;
 
 namespace DataManager.Handlers;
-public class DisplayFollowingHandler(string filePath) : IOperationHandler
+public class DisplayFollowingHandler() : IOperationHandler
 {
-    public void Execute(IFileFormatStrategy fileFormatStrategy)
+    public void Execute(string filePath, IFileFormatStrategy fileFormatStrategy)
     {
-        throw new NotImplementedException();
+        RelationshipData data = fileFormatStrategy.ProcessFile(filePath, "relationships_following");
     }
 }
