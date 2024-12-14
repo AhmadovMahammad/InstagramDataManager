@@ -12,6 +12,7 @@ public static class OperationFactory
 {
     public static IOperationHandler? CreateHandler(OperationType operationType, string filePath)
     {
+        // If we don't support this operation, just return null.
         return operationType switch
         {
             OperationType.Display_Recent_Follow_Requests => new DisplayRecentFollowRequestsHandler(filePath),

@@ -24,34 +24,36 @@ public class CommandHandler : ICommandHandler // Routes command-line inputs to t
 
     public void Handle(OperationType operationType)
     {
-        // We receive this at the beginning because each operation requires a single file to function.
+        // First, check if the operation handler exists for the given operationType.
+        // If the handler is null, exit early without needing user input.
+        var operationHandler = OperationFactory.CreateHandler(operationType, string.Empty);
+        if (operationHandler is null)
+        {
+            $"There is currently no support for operation: {operationType}".WriteMessage(MessageType.Warning);
+            return;
+        }
+
+        // Now, prompt the user for the file path to proceed
         Console.Write("Enter the file path to proceed: ");
-        string? filePath = Console.ReadLine();
+        string filePath = Console.ReadLine() ?? string.Empty;
 
         // Validate the file using the chain of responsibility
-        if (!_validationChain.Handle(filePath ?? string.Empty))
+        if (!_validationChain.Handle(filePath))
         {
             "File validation failed. Operation aborted.".WriteMessage(MessageType.Error);
             return;
         }
 
-        IFileFormatStrategy fileFormatStrategy = Path.GetExtension(filePath)?.ToLower() switch
+        IFileFormatStrategy fileFormatStrategy = Path.GetExtension(filePath).ToLower() switch
         {
-            "json" => new JsonFileFormatStrategy(),
-            "html" => new HtmlFileFormatStrategy(),
+            ".json" => new JsonFileFormatStrategy(),
+            ".html" => new HtmlFileFormatStrategy(),
             _ => throw new InvalidOperationException("Unsupported file format") // Probably we will never reach here...
         };
 
         try
         {
-            // Use the factory to get the appropriate handler for the operation
-            var operationHandler = OperationFactory.CreateHandler(operationType, filePath!);
-            if (operationHandler is null)
-            {
-                $"Operation '{operationType}' is not supported.".WriteMessage(MessageType.Warning);
-                return;
-            }
-
+            // Execute the operation handler with the appropriate file format strategy
             operationHandler.Execute(fileFormatStrategy);
         }
         catch (Exception ex)
