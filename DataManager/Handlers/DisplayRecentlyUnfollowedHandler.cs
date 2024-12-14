@@ -6,6 +6,6 @@ public class DisplayRecentlyUnfollowedHandler() : IOperationHandler
 {
     public void Execute(string filePath, IFileFormatStrategy fileFormatStrategy)
     {
-        RelationshipData data = fileFormatStrategy.ProcessFile(filePath, "relationships_unfollowed_users");
+        IEnumerable<RelationshipData> data = fileFormatStrategy.ProcessFile(filePath, "relationships_unfollowed_users");
     }
 }

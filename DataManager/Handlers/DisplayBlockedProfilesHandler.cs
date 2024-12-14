@@ -6,6 +6,6 @@ public class DisplayBlockedProfilesHandler() : IOperationHandler
 {
     public void Execute(string filePath, IFileFormatStrategy fileFormatStrategy)
     {
-        RelationshipData data = fileFormatStrategy.ProcessFile(filePath, "relationships_blocked_users");
+        IEnumerable<RelationshipData> data = fileFormatStrategy.ProcessFile(filePath, "relationships_blocked_users");
     }
 }

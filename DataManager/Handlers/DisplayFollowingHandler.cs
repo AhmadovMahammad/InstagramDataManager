@@ -6,6 +6,6 @@ public class DisplayFollowingHandler() : IOperationHandler
 {
     public void Execute(string filePath, IFileFormatStrategy fileFormatStrategy)
     {
-        RelationshipData data = fileFormatStrategy.ProcessFile(filePath, "relationships_following");
+        IEnumerable<RelationshipData> data = fileFormatStrategy.ProcessFile(filePath, "relationships_following");
     }
 }

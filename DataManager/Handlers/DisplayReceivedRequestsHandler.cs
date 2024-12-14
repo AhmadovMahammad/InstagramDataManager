@@ -6,6 +6,6 @@ public class DisplayReceivedRequestsHandler() : IOperationHandler
 {
     public void Execute(string filePath, IFileFormatStrategy fileFormatStrategy)
     {
-        RelationshipData data = fileFormatStrategy.ProcessFile(filePath, "relationships_follow_requests_received");
+        IEnumerable<RelationshipData> data = fileFormatStrategy.ProcessFile(filePath, "relationships_follow_requests_received");
     }
 }

@@ -1,17 +1,12 @@
-﻿using DataManager.Constants.Enums;
-using DataManager.DesignPatterns.StrategyDP.Contracts;
-using DataManager.Helpers.Extensions;
+﻿using DataManager.DesignPatterns.StrategyDP.Contracts;
 using DataManager.Models;
 using System.Text.Json;
 
 namespace DataManager.DesignPatterns.StrategyDP.Implementations;
 public class JsonFileFormatStrategy : IFileFormatStrategy
 {
-    public RelationshipData ProcessFile(string filePath, string rootElementPath)
+    public IEnumerable<RelationshipData> ProcessFile(string filePath, string rootElementPath)
     {
-        $"Processing JSON file: {filePath}".WriteMessage(MessageType.Info);
-        Console.WriteLine();
-
         using FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
         using JsonDocument jsonDocument = JsonDocument.Parse(fileStream, new JsonDocumentOptions
         {
@@ -19,12 +14,35 @@ public class JsonFileFormatStrategy : IFileFormatStrategy
         });
 
         JsonElement rootElement = jsonDocument.RootElement;
-
-        if (rootElement.TryGetProperty(rootElementPath, out JsonElement jsonElement))
+        return rootElement.ValueKind switch
         {
+            JsonValueKind.Array => ProcessArray(rootElement),
+            JsonValueKind.Object => ProcessObject(rootElement, rootElementPath),
+            _ => throw new InvalidOperationException($"Unsupported JSON format: {rootElement.ValueKind}. Expected an object or array.")
+        };
+    }
 
+    private IEnumerable<RelationshipData> ProcessArray(JsonElement arrayElement)
+    {
+        foreach (JsonElement childItem in arrayElement.EnumerateArray())
+        {
+            if (childItem.ValueKind == JsonValueKind.Object)
+            {
+                RelationshipData? data = JsonSerializer.Deserialize<RelationshipData>(childItem.GetRawText());
+                if (data is not null)
+                {
+                    yield return data;
+                }
+            }
         }
+    }
 
-        return new();
+    private IEnumerable<RelationshipData> ProcessObject(JsonElement objectElement, string rootElementPath)
+    {
+        if (string.IsNullOrEmpty(rootElementPath)) throw new ArgumentException("Root element path must be provided for processing JSON objects.", nameof(rootElementPath));
+        if (!objectElement.TryGetProperty(rootElementPath, out JsonElement nestedElement)) throw new KeyNotFoundException($"Root element '{rootElementPath}' not found in the JSON.");
+        if (nestedElement.ValueKind != JsonValueKind.Array) throw new InvalidOperationException($"The specified root element '{rootElementPath}' is not an array.");
+
+        return ProcessArray(nestedElement);
     }
 }

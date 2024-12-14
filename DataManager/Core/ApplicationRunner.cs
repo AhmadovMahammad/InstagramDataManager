@@ -32,7 +32,6 @@ public class ApplicationRunner(ICommandHandler handler)
                 }
                 catch (Exception ex)
                 {
-                    // todo: modify error message
                     _displayMenu = false;
                     ex.Message.WriteMessage(MessageType.Error);
                 }

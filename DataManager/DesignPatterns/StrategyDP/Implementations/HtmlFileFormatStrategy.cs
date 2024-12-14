@@ -6,9 +6,9 @@ using DataManager.Models;
 namespace DataManager.DesignPatterns.StrategyDP.Implementations;
 public class HtmlFileFormatStrategy : IFileFormatStrategy
 {
-    public RelationshipData ProcessFile(string filePath, string rootElementPath)
+    public IEnumerable<RelationshipData> ProcessFile(string filePath, string rootElementPath)
     {
         $"Processing HTML file: {filePath}".WriteMessage(MessageType.Info);
-        return new();
+        return [];
     }
 }

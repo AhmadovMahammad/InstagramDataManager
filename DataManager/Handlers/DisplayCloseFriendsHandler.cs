@@ -6,6 +6,6 @@ public class DisplayCloseFriendsHandler() : IOperationHandler
 {
     public void Execute(string filePath, IFileFormatStrategy fileFormatStrategy)
     {
-        RelationshipData data = fileFormatStrategy.ProcessFile(filePath, "relationships_close_friends");
+        IEnumerable<RelationshipData> data = fileFormatStrategy.ProcessFile(filePath, "relationships_close_friends");
     }
 }
