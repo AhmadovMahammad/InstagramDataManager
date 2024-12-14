@@ -1,7 +1,7 @@
 ﻿using DataManager.Constants.Enums;
 using DataManager.DesignPatterns.StrategyDP.Contracts;
 using DataManager.Helpers.Extensions;
-using DataManager.Models;
+using DataManager.Models.Filter;
 
 namespace DataManager.DesignPatterns.StrategyDP.Implementations;
 public class HtmlFileFormatStrategy : IFileFormatStrategy

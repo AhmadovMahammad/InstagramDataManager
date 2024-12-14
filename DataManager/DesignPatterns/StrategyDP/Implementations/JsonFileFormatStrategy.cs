@@ -1,5 +1,5 @@
 ﻿using DataManager.DesignPatterns.StrategyDP.Contracts;
-using DataManager.Models;
+using DataManager.Models.Filter;
 using System.Text.Json;
 
 namespace DataManager.DesignPatterns.StrategyDP.Implementations;

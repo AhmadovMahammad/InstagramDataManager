@@ -1,12 +1,13 @@
-﻿using ConsoleTables;
-using DataManager.Helpers.Extensions;
-using DataManager.Models;
+﻿using DataManager.Helpers.Extensions;
+using DataManager.Mappers;
+using DataManager.Models.Filter;
 
 namespace DataManager.Handlers;
 public class BaseHandler
 {
-    public void DisplayInView(IEnumerable<RelationshipData> relationshipData)
+    public void DisplayResponse(IEnumerable<RelationshipData> data)
     {
-        relationshipData.DisplayAsTable<RelationshipData>(Format.Default, "Title", "Href", "Value", "Timestamp");
+        "Result".DisplayAsHeader(4, ConsoleColor.DarkCyan);
+        RelationshipDataMapper.Map(data).DisplayAsTable(ConsoleColor.Gray, "Title", "Href", "Value", "Timestamp");
     }
 }

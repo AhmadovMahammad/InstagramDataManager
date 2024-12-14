@@ -3,6 +3,7 @@ using DataManager.Constants;
 using DataManager.Constants.Enums;
 using DataManager.Helpers.Extensions;
 using DataManager.Models;
+using DataManager.Models.View;
 
 namespace DataManager.Core;
 public class ApplicationRunner(ICommandHandler handler)
@@ -40,7 +41,7 @@ public class ApplicationRunner(ICommandHandler handler)
             }
             else if (!string.IsNullOrWhiteSpace(input) && input != "exit")
             {
-                Console.WriteLine("Invalid operation number. Please try again.");
+                "Invalid operation number. Please try again.".WriteMessage(MessageType.Error);
                 _displayMenu = false; // Invalid input, do not display menu.
             }
         }
@@ -51,9 +52,11 @@ public class ApplicationRunner(ICommandHandler handler)
     {
         if (_displayMenu)
         {
+            "Available Operations".DisplayAsHeader(4, ConsoleColor.DarkCyan);
+
             AppConstant.AvailableOperations
                 .Select(op => new MenuModel { Key = op.Key, Action = op.Value.action, Description = op.Value.description })
-                .DisplayAsTable(Format.Minimal, "Key", "Action", "Description");
+                .DisplayAsTable(ConsoleColor.Blue, "Key", "Action", "Description");
         }
     }
 

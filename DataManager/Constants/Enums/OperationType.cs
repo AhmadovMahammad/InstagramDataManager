@@ -26,7 +26,4 @@ public enum OperationType
 
     [Description("Displays follow requests that are still pending.")]
     Display_Pending_Follow_Requests,
-
-    [Description("Exit the application.")]
-    Exit
 }

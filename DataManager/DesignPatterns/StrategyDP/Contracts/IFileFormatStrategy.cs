@@ -1,4 +1,4 @@
-﻿using DataManager.Models;
+﻿using DataManager.Models.Filter;
 
 namespace DataManager.DesignPatterns.StrategyDP.Contracts;
 public interface IFileFormatStrategy

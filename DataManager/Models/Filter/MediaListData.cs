@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace DataManager.Models;
+namespace DataManager.Models.Filter;
 public class MediaListData
 {
     [JsonPropertyName("media_url")]

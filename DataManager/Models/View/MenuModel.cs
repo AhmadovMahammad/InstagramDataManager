@@ -1,4 +1,4 @@
-﻿namespace DataManager.Models;
+﻿namespace DataManager.Models.View;
 public record MenuModel
 {
     public int Key { get; init; }
