@@ -1,6 +1,6 @@
 ﻿namespace DataManager.DesignPatterns.ChainOfResponsibilityDP.Contracts;
-public interface IHandler
+public interface IChainHandler
 {
-    IHandler SetNext(IHandler handler);
+    IChainHandler SetNext(IChainHandler handler);
     bool Handle(string request);
 }

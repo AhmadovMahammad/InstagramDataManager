@@ -9,7 +9,6 @@ internal class Program
     private static void Main(string[] args)
     {
         CreateHostBuilder(args);
-
         GetRequiredService<ApplicationRunner>().Run();
     }
 

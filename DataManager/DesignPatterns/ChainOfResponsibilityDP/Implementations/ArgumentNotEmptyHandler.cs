@@ -1,12 +1,15 @@
-﻿namespace DataManager.DesignPatterns.ChainOfResponsibilityDP.Implementations;
+﻿using DataManager.Constants.Enums;
+using DataManager.Helpers.Extensions;
+
+namespace DataManager.DesignPatterns.ChainOfResponsibilityDP.Implementations;
 public class ArgumentNotEmptyHandler : AbstractHandler
 {
     public override bool Handle(string input)
     {
         if (string.IsNullOrWhiteSpace(input))
         {
-            Console.WriteLine("Error: The provided file path is empty or contains only whitespace.");
-            Console.WriteLine("Hint: Make sure to provide a valid file path to a JSON file.");
+            "Error: The provided file path is empty or contains only whitespace.".WriteMessage(MessageType.Error);
+            "Hint: Make sure to provide a valid file path to a JSON or HTML file.".WriteMessage(MessageType.Info);
             return false;
         }
 

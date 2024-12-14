@@ -1,11 +1,11 @@
 ﻿using DataManager.DesignPatterns.ChainOfResponsibilityDP.Contracts;
 
 namespace DataManager.DesignPatterns.ChainOfResponsibilityDP.Implementations;
-public abstract class AbstractHandler : IHandler
+public abstract class AbstractHandler : IChainHandler
 {
-    private IHandler? _nextHandler;
+    private IChainHandler? _nextHandler;
 
-    public IHandler SetNext(IHandler handler)
+    public IChainHandler SetNext(IChainHandler handler)
     {
         if (_nextHandler is null)
         {
@@ -13,7 +13,7 @@ public abstract class AbstractHandler : IHandler
         }
         else
         {
-            IHandler currentHandler = _nextHandler;
+            IChainHandler currentHandler = _nextHandler;
             while (currentHandler is AbstractHandler abstractHandler && abstractHandler._nextHandler is not null)
             {
                 currentHandler = abstractHandler._nextHandler;
