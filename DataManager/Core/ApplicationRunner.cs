@@ -49,7 +49,7 @@ public class ApplicationRunner(ICommandHandler handler)
     {
         if (_displayMenu)
         {
-            Console.WriteLine("============================================");
+            Console.WriteLine("\n============================================");
             Console.WriteLine("            Available Operations            ");
             Console.WriteLine("============================================\n");
 

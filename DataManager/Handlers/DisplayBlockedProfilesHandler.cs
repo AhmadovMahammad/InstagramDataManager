@@ -2,10 +2,11 @@
 using DataManager.Models;
 
 namespace DataManager.Handlers;
-public class DisplayBlockedProfilesHandler() : IOperationHandler
+public class DisplayBlockedProfilesHandler() : BaseHandler, IOperationHandler
 {
     public void Execute(string filePath, IFileFormatStrategy fileFormatStrategy)
     {
         IEnumerable<RelationshipData> data = fileFormatStrategy.ProcessFile(filePath, "relationships_blocked_users");
+        DisplayInView(data);
     }
 }

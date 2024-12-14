@@ -8,18 +8,20 @@ public class JsonFileFormatStrategy : IFileFormatStrategy
     public IEnumerable<RelationshipData> ProcessFile(string filePath, string rootElementPath)
     {
         using FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-        using JsonDocument jsonDocument = JsonDocument.Parse(fileStream, new JsonDocumentOptions
+        JsonDocument jsonDocument = JsonDocument.Parse(fileStream, new JsonDocumentOptions
         {
             CommentHandling = JsonCommentHandling.Skip,
         });
 
         JsonElement rootElement = jsonDocument.RootElement;
-        return rootElement.ValueKind switch
+        var data = rootElement.ValueKind switch
         {
             JsonValueKind.Array => ProcessArray(rootElement),
             JsonValueKind.Object => ProcessObject(rootElement, rootElementPath),
             _ => throw new InvalidOperationException($"Unsupported JSON format: {rootElement.ValueKind}. Expected an object or array.")
         };
+
+        return data;
     }
 
     private IEnumerable<RelationshipData> ProcessArray(JsonElement arrayElement)
