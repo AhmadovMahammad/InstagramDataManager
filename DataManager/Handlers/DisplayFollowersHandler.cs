@@ -2,9 +2,11 @@
 using DataManager.Models.Filter;
 
 namespace DataManager.Handlers;
-public class DisplayFollowersHandler() : BaseHandler, IOperationHandler
+public class DisplayFollowersHandler() : BaseOperationHandler
 {
-    public void Execute(string filePath, IFileFormatStrategy fileFormatStrategy)
+    public override bool RequiresFile => true;
+
+    public override void Execute(string filePath, IFileFormatStrategy fileFormatStrategy)
     {
         IEnumerable<RelationshipData> data = fileFormatStrategy.ProcessFile(filePath, string.Empty);
         DisplayResponse(data);

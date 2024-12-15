@@ -26,4 +26,16 @@ public enum OperationType
 
     [Description("Displays follow requests that are still pending.")]
     Display_Pending_Follow_Requests,
+
+    [Description("Unfollows all profiles that do not follow you back.")]
+    Unfollow_Non_Followers,
+
+    [Description("Unfollows all profiles you have sent follow requests to.")]
+    Unfollow_Sent_Follow_Requests,
+
+    [Description("Unblocks all the profiles you have previously blocked.")]
+    Unblock_All_Blocked_Profiles,
+
+    [Description("Unlikes all posts you have liked.")]
+    Unlike_All_Posts,
 }

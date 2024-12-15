@@ -1,8 +1,4 @@
 ﻿using DataManager.Constants.Enums;
-using DataManager.DesignPatterns.ChainOfResponsibilityDP.Contracts;
-using DataManager.DesignPatterns.ChainOfResponsibilityDP.Implementations;
-using DataManager.DesignPatterns.StrategyDP.Contracts;
-using DataManager.DesignPatterns.StrategyDP.Implementations;
 using DataManager.Helpers.Extensions;
 
 namespace DataManager.Core;
@@ -13,15 +9,6 @@ public interface ICommandHandler
 
 public class CommandHandler : ICommandHandler // Routes command-line inputs to tasks
 {
-    private readonly IChainHandler _validationChain;
-
-    public CommandHandler()
-    {
-        _validationChain = new ArgumentNotEmptyHandler()
-            .SetNext(new FileExistsHandler())
-            .SetNext(new FileExtensionHandler(["json", "html"])); // Instagram data can only be exported as HTML or JSON.
-    }
-
     public void Handle(OperationType operationType)
     {
         // First, check if the operation handler exists for the given operationType.
@@ -33,28 +20,9 @@ public class CommandHandler : ICommandHandler // Routes command-line inputs to t
             return;
         }
 
-        // Now, prompt the user for the file path to proceed
-        Console.Write("Enter the file path to proceed: ");
-        string filePath = Console.ReadLine() ?? string.Empty;
-
-        // Validate the file using the chain of responsibility
-        if (!_validationChain.Handle(filePath))
-        {
-            "File validation failed. Operation aborted.".WriteMessage(MessageType.Error);
-            return;
-        }
-
-        IFileFormatStrategy fileFormatStrategy = Path.GetExtension(filePath).ToLower() switch
-        {
-            ".json" => new JsonFileFormatStrategy(),
-            ".html" => new HtmlFileFormatStrategy(),
-            _ => throw new InvalidOperationException("Unsupported file format") // Probably we will never reach here...
-        };
-
         try
         {
-            // Execute the operation handler with the appropriate file format strategy
-            operationHandler.Execute(filePath, fileFormatStrategy);
+            operationHandler.HandleOperation(); // Polymorphic call to handle both types
         }
         catch (Exception ex)
         {

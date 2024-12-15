@@ -1,8 +1,6 @@
-﻿using ConsoleTables;
-using DataManager.Constants;
+﻿using DataManager.Constants;
 using DataManager.Constants.Enums;
 using DataManager.Helpers.Extensions;
-using DataManager.Models;
 using DataManager.Models.View;
 
 namespace DataManager.Core;
@@ -13,7 +11,7 @@ public class ApplicationRunner(ICommandHandler handler)
 
     public void Run()
     {
-        Console.WriteLine("Welcome to Instagram Data Manager!\n");
+        Console.WriteLine("Welcome to Instagram Data Manager!");
 
         string? input;
 
@@ -52,7 +50,7 @@ public class ApplicationRunner(ICommandHandler handler)
     {
         if (_displayMenu)
         {
-            "Available Operations".DisplayAsHeader(4, ConsoleColor.DarkCyan);
+            "\nAvailable Operations\n".WriteMessage(MessageType.Warning);
 
             AppConstant.AvailableOperations
                 .Select(op => new MenuModel { Key = op.Key, Action = op.Value.action, Description = op.Value.description })

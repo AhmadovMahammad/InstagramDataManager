@@ -1,11 +1,10 @@
 ﻿using DataManager.Constants.Enums;
-using DataManager.DesignPatterns.StrategyDP.Contracts;
 using DataManager.Handlers;
 
 namespace DataManager;
 public interface IOperationHandler
 {
-    void Execute(string filePath, IFileFormatStrategy fileFormatStrategy);
+    void HandleOperation();
 }
 
 public static class OperationFactory
@@ -23,6 +22,10 @@ public static class OperationFactory
             OperationType.Display_Following => new DisplayFollowingHandler(),
             OperationType.Display_Recently_Unfollowed => new DisplayRecentlyUnfollowedHandler(),
             OperationType.Display_Pending_Follow_Requests => new DisplayPendingFollowRequestsHandler(),
+            OperationType.Unfollow_Non_Followers => new UnfollowNonFollowersHandler(),
+            OperationType.Unfollow_Sent_Follow_Requests => new UnfollowSentFollowRequestsHandler(),
+            OperationType.Unblock_All_Blocked_Profiles => null,
+            OperationType.Unlike_All_Posts => new UnlikeAllPostsHandler(),
             _ => null
         };
     }
