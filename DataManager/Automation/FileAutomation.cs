@@ -18,6 +18,7 @@ public class FileAutomation
     public (string filePath, IFileFormatStrategy? strategy) GetParams()
     {
         string filePath = GetFilePath();
+
         if (_validationChain.Handle(filePath))
         {
             var fileFormatStrategy = GetFileFormatStrategy(filePath);

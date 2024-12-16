@@ -19,7 +19,7 @@ internal class Program
         }
 
         CreateHostBuilder(args);
-        GetRequiredService<ApplicationRunner>().Run();
+        RunApplication();
     }
 
     private static void CreateHostBuilder(string[] args)
@@ -31,5 +31,9 @@ internal class Program
             }).Build();
     }
 
-    private static T GetRequiredService<T>() where T : class => _host.Services.GetRequiredService<T>();
+    private static void RunApplication()
+    {
+        var applicationRunner = _host.Services.GetRequiredService<ApplicationRunner>();
+        applicationRunner.Run();
+    }
 }

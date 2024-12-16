@@ -11,7 +11,6 @@ public static class OperationFactory
 {
     public static IOperationHandler? CreateHandler(OperationType operationType)
     {
-        // If we don't support this operation, just return null.
         return operationType switch
         {
             OperationType.Display_Recent_Follow_Requests => new DisplayRecentFollowRequestsHandler(),
@@ -24,7 +23,7 @@ public static class OperationFactory
             OperationType.Display_Pending_Follow_Requests => new DisplayPendingFollowRequestsHandler(),
             OperationType.Unfollow_Non_Followers => new UnfollowNonFollowersHandler(),
             OperationType.Unfollow_Sent_Follow_Requests => new UnfollowSentFollowRequestsHandler(),
-            OperationType.Unblock_All_Blocked_Profiles => null,
+            OperationType.Unblock_All_Blocked_Profiles => new UnblockAllBlockedProfilesHandler(),
             OperationType.Unlike_All_Posts => new UnlikeAllPostsHandler(),
             _ => null
         };

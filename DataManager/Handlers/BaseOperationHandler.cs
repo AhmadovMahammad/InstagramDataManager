@@ -1,8 +1,6 @@
 ﻿using DataManager.Automation;
 using DataManager.DesignPatterns.StrategyDP.Contracts;
-using DataManager.Helpers.Extensions;
-using DataManager.Mappers;
-using DataManager.Models.Filter;
+using DataManager.DesignPatterns.StrategyDP.Implementations;
 
 namespace DataManager.Handlers;
 public abstract class BaseOperationHandler : IOperationHandler
@@ -11,28 +9,35 @@ public abstract class BaseOperationHandler : IOperationHandler
 
     public void HandleOperation()
     {
-        if (RequiresFile)
-        {
-            FileAutomation fileAutomation = new FileAutomation();
-            (string filePath, IFileFormatStrategy? strategy) = fileAutomation.GetParams();
+        var parameters = RequiresFile
+            ? GetFileParameters()
+            : GetWebDriverParameters();
 
-            if (!string.IsNullOrEmpty(filePath) && strategy is not null)
-            {
-                var data = Execute(filePath, strategy);
-
-                Console.WriteLine("\nResult\n");
-                RelationshipDataMapper.Map(data).DisplayAsTable(ConsoleColor.Gray, "Title", "Href", "Value", "Timestamp");
-            }
-        }
-        else
-        {
-            SeleniumAutomation seleniumAutomation = new SeleniumAutomation();
-            seleniumAutomation.Execute();
-        }
+        Execute(parameters);
     }
 
-    public virtual IEnumerable<RelationshipData> Execute(string filePath, IFileFormatStrategy fileFormatStrategy)
+    protected abstract void Execute(Dictionary<string, object> parameters);
+
+
+    private Dictionary<string, object> GetFileParameters()
     {
-        return Enumerable.Empty<RelationshipData>();
+        (string filePath, IFileFormatStrategy? strategy) = new FileAutomation().GetParams();
+
+        return new Dictionary<string, object>
+        {
+            { "FilePath", filePath },
+            { "FileFormatStrategy", strategy ?? new JsonFileFormatStrategy() }
+        };
+    }
+
+    private Dictionary<string, object> GetWebDriverParameters()
+    {
+        SeleniumAutomation automation = new SeleniumAutomation();
+        automation.ExecuteLogin();
+
+        return new Dictionary<string, object>
+        {
+            { "WebDriver", automation.Driver }
+        };
     }
 }

@@ -1,5 +1,5 @@
 ﻿using DataManager.Constants.Enums;
-using DataManager.Helpers.Extensions;
+using DataManager.Extensions;
 
 namespace DataManager.Core;
 public interface ICommandHandler

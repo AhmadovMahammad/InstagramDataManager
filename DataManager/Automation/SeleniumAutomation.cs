@@ -1,47 +1,66 @@
-﻿using DataManager.DesignPatterns.ChainOfResponsibilityDP.Contracts;
-using DataManager.DesignPatterns.ChainOfResponsibilityDP.Implementations;
+﻿using DataManager.Constants;
+using DataManager.Extensions;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Firefox;
+using OpenQA.Selenium.Support.UI;
 
 namespace DataManager.Automation;
-public class SeleniumAutomation
+public class SeleniumAutomation : LoginAutomation
 {
-    private readonly IWebDriver _driver;
-    private readonly IChainHandler _validationChain;
+    public IWebDriver Driver => _driver;
 
-    public SeleniumAutomation()
+    protected override IWebDriver InitializeDriver()
     {
-        // set up validation chain
-        _validationChain = new ArgumentNotEmptyHandler()
-            .SetNext(new FileExistsHandler())
-            .SetNext(new FileExtensionHandler([".exe"])); // Expecting .exe file
+        string firefoxPath = GetFirefoxExecutablePath();
 
-        // prompt user for Firefox executable path
-        string firefoxDeveloperEditionPath = GetFirefoxExecutablePath();
+        FirefoxOptions options = new() { BinaryLocation = firefoxPath };
+        options.AddArgument("--headless");
 
-        // set Firefox options
-        FirefoxOptions options = new FirefoxOptions { BinaryLocation = firefoxDeveloperEditionPath };
-        options.AddArgument("--start-maximized");
-
-        // initialize the WebDriver with options
         _driver = new FirefoxDriver(options);
-        _driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
+        _driver.Manage().Timeouts().ImplicitWait = AppConstant.ImplicitWait;
+
+        return _driver;
     }
 
-    public void Execute()
+    protected override void PerformLoginSteps()
     {
+        Console.Write("Enter username: ");
+        SendKeys(LoginPageConstants.usernameField.Invoke(_driver), Console.ReadLine() ?? string.Empty);
+
+        Console.Write("Enter password: ");
+        SendKeys(LoginPageConstants.passwordField.Invoke(_driver), Extension.ReadPassword() ?? string.Empty);
+
+        LoginPageConstants.submitButton.Invoke(_driver).Submit();
+    }
+
+    protected override void HandleLoginOutcome()
+    {
+        WebDriverWait wait = new WebDriverWait(_driver, AppConstant.ExplicitWait);
+
         try
         {
+            wait.Until(driver =>
+                driver.FindElements(By.XPath("//div[contains(text(),'your password was incorrect')]")).Count > 0 ||
+                driver.FindElements(By.XPath("//input[@name='verificationCode']")).Count > 0 ||
+                driver.Url.Contains("accounts/onetap"));
 
+            if (_driver.FindElements(By.XPath("//div[contains(text(),'your password was incorrect')]")).Count > 0)
+            {
+                Console.WriteLine("The password entered is incorrect.");
+            }
+            else if (_driver.FindElements(By.XPath("//input[@name='verificationCode']")).Count > 0)
+            {
+                Console.WriteLine("Two-factor authentication required.");
+                Console.Write("Enter the 2FA code: ");
+                string code = Console.ReadLine() ?? string.Empty;
+                IWebElement verificationField = _driver.FindElement(By.XPath("//input[@name='verificationCode']"));
+                verificationField.SendKeys(code);
+                verificationField.Submit();
+            }
         }
-        catch (Exception)
+        catch (WebDriverTimeoutException)
         {
-
-            throw;
-        }
-        finally
-        {
-            _driver.Quit();
+            throw new TimeoutException($"Operation could not be completed in {AppConstant.ImplicitWait.Seconds} seconds or Verify the internet connection.");
         }
     }
 

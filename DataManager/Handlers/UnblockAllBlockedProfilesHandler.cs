@@ -1,5 +1,5 @@
 ﻿namespace DataManager.Handlers;
-public class UnfollowNonFollowersHandler : BaseOperationHandler
+public class UnblockAllBlockedProfilesHandler : BaseOperationHandler
 {
     public override bool RequiresFile => false;
 

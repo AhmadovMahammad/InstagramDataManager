@@ -37,5 +37,5 @@ public enum OperationType
     Unblock_All_Blocked_Profiles,
 
     [Description("Unlikes all posts you have liked.")]
-    Unlike_All_Posts,
+    Unlike_All_Posts
 }

@@ -1,12 +1,15 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using DataManager.Handlers;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DataManager.Core;
 internal static class Startup
 {
-    public static void ConfigureServices(IServiceCollection serviceDescriptors)
+    public static void ConfigureServices(IServiceCollection services)
     {
         // Register application services
-        serviceDescriptors.AddSingleton<ApplicationRunner>();
-        serviceDescriptors.AddSingleton<ICommandHandler, CommandHandler>();
+        services.AddSingleton<ApplicationRunner>();
+        services.AddSingleton<ICommandHandler, CommandHandler>();
+        services.AddTransient<IOperationHandler, DisplayFollowersHandler>();
+        // todo: Add other operation handlers here
     }
 }

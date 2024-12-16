@@ -5,5 +5,4 @@ public enum MessageType
     Error,
     Info,
     Warning,
-    Header
 }
