@@ -6,9 +6,8 @@ public class DisplayCloseFriendsHandler() : BaseOperationHandler
 {
     public override bool RequiresFile => true;
 
-    public override void Execute(string filePath, IFileFormatStrategy fileFormatStrategy)
+    public override IEnumerable<RelationshipData> Execute(string filePath, IFileFormatStrategy fileFormatStrategy)
     {
-        IEnumerable<RelationshipData> data = fileFormatStrategy.ProcessFile(filePath, "relationships_close_friends");
-        DisplayResponse(data);
+        return fileFormatStrategy.ProcessFile(filePath, "relationships_close_friends");
     }
 }

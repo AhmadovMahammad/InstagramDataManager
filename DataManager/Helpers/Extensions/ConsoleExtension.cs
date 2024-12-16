@@ -10,7 +10,8 @@ public static class ConsoleExtension
             { MessageType.Success, ConsoleColor.Green },
             { MessageType.Error, ConsoleColor.DarkRed },
             { MessageType.Info, ConsoleColor.Blue },
-            { MessageType.Warning, ConsoleColor.Yellow }
+            { MessageType.Warning, ConsoleColor.Yellow },
+            { MessageType.Header, ConsoleColor.White }
         };
 
     public static void WriteMessage(this string message, MessageType messageType)

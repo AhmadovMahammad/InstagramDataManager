@@ -50,8 +50,7 @@ public class ApplicationRunner(ICommandHandler handler)
     {
         if (_displayMenu)
         {
-            "\nAvailable Operations\n".WriteMessage(MessageType.Warning);
-
+            Console.WriteLine("\nAvailable Operations\n");
             AppConstant.AvailableOperations
                 .Select(op => new MenuModel { Key = op.Key, Action = op.Value.action, Description = op.Value.description })
                 .DisplayAsTable(ConsoleColor.Blue, "Key", "Action", "Description");

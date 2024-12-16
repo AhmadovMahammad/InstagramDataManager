@@ -6,9 +6,8 @@ public class DisplayPendingFollowRequestsHandler() : BaseOperationHandler
 {
     public override bool RequiresFile => true;
 
-    public override void Execute(string filePath, IFileFormatStrategy fileFormatStrategy)
+    public override IEnumerable<RelationshipData> Execute(string filePath, IFileFormatStrategy fileFormatStrategy)
     {
-        IEnumerable<RelationshipData> data = fileFormatStrategy.ProcessFile(filePath, "relationships_follow_requests_sent");
-        DisplayResponse(data);
+        return fileFormatStrategy.ProcessFile(filePath, "relationships_follow_requests_sent");
     }
 }

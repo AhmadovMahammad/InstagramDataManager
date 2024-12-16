@@ -1,5 +1,4 @@
 ﻿using DataManager.Automation;
-using DataManager.Constants.Enums;
 using DataManager.DesignPatterns.StrategyDP.Contracts;
 using DataManager.Helpers.Extensions;
 using DataManager.Mappers;
@@ -19,7 +18,10 @@ public abstract class BaseOperationHandler : IOperationHandler
 
             if (!string.IsNullOrEmpty(filePath) && strategy is not null)
             {
-                Execute(filePath, strategy);
+                var data = Execute(filePath, strategy);
+
+                Console.WriteLine("\nResult\n");
+                RelationshipDataMapper.Map(data).DisplayAsTable(ConsoleColor.Gray, "Title", "Href", "Value", "Timestamp");
             }
         }
         else
@@ -29,11 +31,8 @@ public abstract class BaseOperationHandler : IOperationHandler
         }
     }
 
-    public virtual void Execute(string filePath, IFileFormatStrategy fileFormatStrategy) { }
-
-    public void DisplayResponse(IEnumerable<RelationshipData> data)
+    public virtual IEnumerable<RelationshipData> Execute(string filePath, IFileFormatStrategy fileFormatStrategy)
     {
-        "\nResult\n".WriteMessage(MessageType.Warning);
-        RelationshipDataMapper.Map(data).DisplayAsTable(ConsoleColor.Gray, "Title", "Href", "Value", "Timestamp");
+        return Enumerable.Empty<RelationshipData>();
     }
 }

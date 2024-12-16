@@ -11,36 +11,48 @@ public class SeleniumAutomation
 
     public SeleniumAutomation()
     {
-        // Set up validation chain
+        // set up validation chain
         _validationChain = new ArgumentNotEmptyHandler()
             .SetNext(new FileExistsHandler())
             .SetNext(new FileExtensionHandler([".exe"])); // Expecting .exe file
 
-        // Prompt user for Firefox executable path
-        string firefoxDeveloperEditionPath = GetFirefoxExecutablePath(); // @"C:\Program Files\Firefox Developer Edition\firefox.exe";
+        // prompt user for Firefox executable path
+        string firefoxDeveloperEditionPath = GetFirefoxExecutablePath();
 
-        // Set Firefox options
+        // set Firefox options
         FirefoxOptions options = new FirefoxOptions { BinaryLocation = firefoxDeveloperEditionPath };
         options.AddArgument("--start-maximized");
 
-        // Initialize the WebDriver with options
+        // initialize the WebDriver with options
         _driver = new FirefoxDriver(options);
         _driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
     }
 
     public void Execute()
     {
-        // all operations here
+        try
+        {
+
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+        finally
+        {
+            _driver.Quit();
+        }
     }
 
     private string GetFirefoxExecutablePath()
     {
-        string? firefoxPath = string.Empty;
+        string firefoxPath = @"C:\Program Files\Firefox Developer Edition\firefox.exe";
 
-        while (string.IsNullOrWhiteSpace(firefoxPath) || !_validationChain.Handle(firefoxPath))
+        while (!File.Exists(firefoxPath) || !_validationChain.Handle(firefoxPath))
         {
-            Console.WriteLine("Please enter the path to your Firefox Developer Edition executable (e.g., C:\\Program Files\\Firefox Developer Edition\\firefox.exe):");
-            firefoxPath = Console.ReadLine();
+            Console.Write("Please enter the path to your Firefox Developer Edition executable \n(e.g., C:\\Program Files\\Firefox Developer Edition\\firefox.exe): ");
+            firefoxPath = Console.ReadLine() ?? string.Empty;
         }
 
         return firefoxPath;
