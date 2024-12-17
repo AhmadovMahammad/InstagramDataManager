@@ -1,7 +1,7 @@
 ﻿using DataManager.Constants;
 using DataManager.Constants.Enums;
 using DataManager.Extensions;
-using DataManager.Models.View;
+using DataManager.Models;
 
 namespace DataManager.Core;
 public class ApplicationRunner(ICommandHandler handler)
@@ -12,16 +12,17 @@ public class ApplicationRunner(ICommandHandler handler)
     {
         Console.WriteLine("Welcome to Instagram Data Manager!");
 
-        string? input;
-
-        do
+        string? input = string.Empty;
+        while (!IsExitCommand(input))
         {
             DisplayMenu();
 
-            Console.Write("\nOperation Number: ");
+            Console.Write("\nOperation (Enter a number for an operation or type 'exit' to quit): ");
             input = Console.ReadLine()?.ToLower();
 
-            if (TryGetOperation(input, out int operationId) && operationId != default)
+            if (IsExitCommand(input)) break;
+
+            if (IsValidOperationInput(input, out int operationId))
             {
                 try
                 {
@@ -32,24 +33,31 @@ public class ApplicationRunner(ICommandHandler handler)
                     ex.Message.WriteMessage(MessageType.Error);
                 }
             }
-            else if (!string.IsNullOrWhiteSpace(input) && input != "exit")
+            else
             {
                 "Invalid operation number. Please try again.".WriteMessage(MessageType.Error);
             }
         }
-        while (!string.IsNullOrWhiteSpace(input) && !string.Equals(input, "exit"));
     }
 
     private void DisplayMenu()
     {
         Console.WriteLine("\nAvailable Operations\n");
-        AppConstant.AvailableOperations
-            .Select(op => new MenuModel { Key = op.Key, Action = op.Value.action, Description = op.Value.description })
-            .DisplayAsTable(ConsoleColor.Blue, "Key", "Action", "Description");
+
+        var menuItems = AppConstant.AvailableOperations
+            .Select(op => new MenuModel
+            {
+                Key = op.Key,
+                Action = op.Value.action,
+                Description = op.Value.description
+            }).ToList();
+
+        menuItems.DisplayAsTable(ConsoleColor.Blue, "Key", "Action", "Description");
     }
 
-    private bool TryGetOperation(string? input, out int operationId)
-    {
-        return int.TryParse(input, out operationId) && AppConstant.AvailableOperations.ContainsKey(operationId);
-    }
+    private bool IsExitCommand(string? input)
+     => string.Equals(input, "exit", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsValidOperationInput(string? input, out int operationId)
+        => int.TryParse(input, out operationId) && AppConstant.AvailableOperations.ContainsKey(operationId);
 }

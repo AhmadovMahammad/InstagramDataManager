@@ -1,6 +1,7 @@
 ﻿using DataManager.Automation;
-using DataManager.DesignPatterns.StrategyDP.Contracts;
-using DataManager.DesignPatterns.StrategyDP.Implementations;
+using DataManager.Automation.Selenium;
+using DataManager.DesignPatterns.Strategy;
+using DataManager.Factories;
 
 namespace DataManager.Handlers;
 public abstract class BaseOperationHandler : IOperationHandler

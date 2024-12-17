@@ -1,5 +1,5 @@
-﻿using DataManager.Models.Filter;
-using DataManager.Models.View;
+﻿using DataManager.Models;
+using DataManager.Models.JsonModels;
 
 namespace DataManager.Mappers;
 public class RelationshipDataMapper

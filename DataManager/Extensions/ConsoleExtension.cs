@@ -1,7 +1,7 @@
 ﻿using DataManager.Constants.Enums;
 
 namespace DataManager.Extensions;
-public static partial class Extension
+public static partial class ConsoleExtension
 {
     private static readonly Dictionary<MessageType, ConsoleColor> MessageTypeColors = new()
         {

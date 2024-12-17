@@ -1,4 +1,5 @@
-﻿using DataManager.Handlers;
+﻿using DataManager.Factories;
+using DataManager.Handlers.DisplayHandlers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DataManager.Core;

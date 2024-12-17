@@ -1,7 +1,5 @@
-﻿using DataManager.DesignPatterns.ChainOfResponsibilityDP.Contracts;
-using DataManager.DesignPatterns.ChainOfResponsibilityDP.Implementations;
-using DataManager.DesignPatterns.StrategyDP.Contracts;
-using DataManager.DesignPatterns.StrategyDP.Implementations;
+﻿using DataManager.DesignPatterns.ChainOfResponsibility;
+using DataManager.DesignPatterns.Strategy;
 
 namespace DataManager.Automation;
 public class FileAutomation

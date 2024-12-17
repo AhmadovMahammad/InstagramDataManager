@@ -5,9 +5,6 @@ using System.Reflection;
 namespace DataManager.Constants;
 public static class AppConstant
 {
-    public static TimeSpan ImplicitWait = TimeSpan.FromSeconds(10);
-    public static TimeSpan ExplicitWait = TimeSpan.FromSeconds(20);
-
     public readonly static Dictionary<int, (string action, string description)> AvailableOperations =
         Enum.GetValues<OperationType>()
         .ToDictionary(

@@ -2,7 +2,7 @@
 using System.Reflection;
 
 namespace DataManager.Extensions;
-public static partial class Extension
+public static partial class TableExtension
 {
     public static void DisplayAsTable<T>(
         this IEnumerable<T> data,
