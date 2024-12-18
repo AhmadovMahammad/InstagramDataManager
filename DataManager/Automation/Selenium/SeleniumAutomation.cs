@@ -18,7 +18,7 @@ public class SeleniumAutomation : LoginAutomation
         string firefoxPath = GetFirefoxExecutablePath();
 
         FirefoxOptions options = new() { BinaryLocation = firefoxPath };
-        options.AddArguments("--headless");
+        //options.AddArguments("--headless");
 
         _driver = new FirefoxDriver(options);
         _driver.Manage().Timeouts().ImplicitWait = AppTimeoutConstants.ImplicitWait;
