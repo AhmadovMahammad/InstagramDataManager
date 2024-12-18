@@ -1,4 +1,3 @@
-
 # Instagram Automation Tool
 
 ## Overview
@@ -14,6 +13,8 @@ The tool supports the following operations:
 - **Display Received Requests**
 - **...**
 - **Unlike All Posts** (Selenium-based)
+
+![image](https://github.com/user-attachments/assets/83112ae0-09f2-4111-b9d4-f1103dec369a)
 
 
 ## Browser Support for Selenium-based Operations
