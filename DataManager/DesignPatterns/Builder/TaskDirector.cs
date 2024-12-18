@@ -7,10 +7,12 @@ namespace DataManager.DesignPatterns.Builder;
 public class TaskDirector
 {
     private readonly ITaskBuilder _builder;
+    private HashSet<string> _visitedImages;
 
     public TaskDirector(ITaskBuilder builder)
     {
         _builder = builder;
+        _visitedImages = new HashSet<string>();
     }
 
     public void BuildUnlikeAllPostsTask()
@@ -32,6 +34,9 @@ public class TaskDirector
 
             WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
 
+            // Ensure the DOM is ready before starting
+            WaitForDomToBeReady(driver);
+
             while (hasMorePosts)
             {
                 IWebElement post = driver.FindElement(By.XPath("//img[@data-bloks-name='bk.components.Image']"));
@@ -42,33 +47,31 @@ public class TaskDirector
                     break;
                 }
 
-                // Scroll the post into view
-                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", post);
+                string postSrc = post.GetDomAttribute("src");
+                if (_visitedImages.Contains(postSrc))
+                {
+                    continue;
+                }
 
-                // Wait until the post is displayed and enabled
+                _visitedImages.Add(postSrc);
+
+                ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", post);
                 wait.Until(d => post.Displayed && post.Enabled);
 
-                // Click the post
                 post.Click();
 
-                // Wait for the post details page to load fully, and check for the unlike button
-                var unlikeButton = wait.Until(d => d.FindElement(By.XPath("//*[name()='svg' and @aria-label='Unlike']")));
+                WaitForDomToBeReady(driver);
 
-                // Click the unlike button
+                var unlikeButton = driver.FindElement(By.XPath("//*[name()='svg' and @aria-label='Unlike']"));
                 unlikeButton.Click();
                 unlikedPosts++;
 
                 $"Unliked post #{unlikedPosts}".WriteMessage(MessageType.Info);
 
-                // Go back to the feed
                 driver.Navigate().Back();
+                WaitForDomToBeReady(driver);
 
-                // Wait for the images to load on the main feed after navigating back
-                wait.Until(d => d.FindElements(By.XPath("//img[@data-bloks-name='bk.components.Image']")).Count > 0);
-
-                // Check if there are more posts
                 hasMorePosts = driver.FindElements(By.XPath("//img[@data-bloks-name='bk.components.Image']")).Count > 0;
-
                 if (!hasMorePosts)
                 {
                     "No more posts available. Ending process.".WriteMessage(MessageType.Info);
@@ -81,5 +84,15 @@ public class TaskDirector
         {
             $"An error occurred while processing unlike operation: {ex.Message}".WriteMessage(MessageType.Error);
         }
+    }
+
+    private void WaitForDomToBeReady(IWebDriver driver)
+    {
+        WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+        wait.Until(d =>
+        {
+            var readyState = ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState").ToString();
+            return readyState == "complete";
+        });
     }
 }
