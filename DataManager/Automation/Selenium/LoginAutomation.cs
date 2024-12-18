@@ -1,4 +1,5 @@
 ﻿using DataManager.DesignPatterns.ChainOfResponsibility;
+using DataManager.Exceptions;
 using OpenQA.Selenium;
 
 namespace DataManager.Automation.Selenium;
@@ -6,6 +7,7 @@ public abstract class LoginAutomation
 {
     protected IWebDriver _driver;
     protected readonly IChainHandler _validationChain;
+    protected bool _errorOccurred;
 
     public LoginAutomation()
     {
@@ -18,21 +20,28 @@ public abstract class LoginAutomation
 
     public void ExecuteLogin()
     {
-        NavigateToLoginPage();
-        PerformLoginSteps();
-        HandleLoginOutcome();
+        try
+        {
+            NavigateToLoginPage();
+            PerformLoginSteps();
+            HandleLoginOutcome();
+            SaveInfo();
+        }
+        catch
+        {
+            return;
+        }
+        finally
+        {
+            //_driver.Quit();
+        }
     }
 
     protected abstract IWebDriver InitializeDriver();
+    protected abstract void NavigateToLoginPage();
     protected abstract void PerformLoginSteps();
     protected abstract void HandleLoginOutcome();
     protected abstract void SaveInfo();
-
-    protected void NavigateToLoginPage()
-    {
-        _driver.Navigate().GoToUrl("https://www.instagram.com/accounts/login/");
-        Console.WriteLine("Instagram login page opened successfully!");
-    }
 
     protected void SendKeys(IWebElement webElement, string data)
     {

@@ -24,5 +24,5 @@ public static class ErrorMessageConstants
     };
 
     public const string IncorrectPasswordMessage = "The password entered is incorrect.";
-    public const string LoginTimeoutMessage = "Operation could not be completed in the given time or Verify the internet connection.";
+    public const string LoginTimeoutMessage = "Operation could not be completed in the given time. Please check your internet connection or retry.";
 }

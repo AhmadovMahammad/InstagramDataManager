@@ -3,7 +3,7 @@ using OpenQA.Selenium;
 using static DataManager.Automation.Selenium.SeleniumAutomation;
 
 namespace DataManager.Constants;
-public class TwoFactorAuthConstants
+public static class TwoFactorAuthConstants
 {
     public static readonly ConditionDelegate VerificationCodeField = (driver) =>
     {

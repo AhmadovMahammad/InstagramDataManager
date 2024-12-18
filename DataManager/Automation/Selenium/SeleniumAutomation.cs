@@ -1,4 +1,5 @@
 ﻿using DataManager.Constants;
+using DataManager.Exceptions;
 using DataManager.Extensions;
 using DataManager.Models;
 using OpenQA.Selenium;
@@ -16,7 +17,7 @@ public class SeleniumAutomation : LoginAutomation
         string firefoxPath = GetFirefoxExecutablePath();
 
         FirefoxOptions options = new() { BinaryLocation = firefoxPath };
-        options.AddArguments(/*"--headless",*/ "--start-maximized");
+        //options.AddArguments("--headless");
 
         _driver = new FirefoxDriver(options);
         _driver.Manage().Timeouts().ImplicitWait = AppTimeoutConstants.ImplicitWait;
@@ -24,15 +25,29 @@ public class SeleniumAutomation : LoginAutomation
         return _driver;
     }
 
+    // overriden methods
+    protected override void NavigateToLoginPage()
+    {
+        _driver.Navigate().GoToUrl("https://www.instagram.com/accounts/login/");
+        Console.WriteLine("Instagram login page opened successfully!");
+    }
+
     protected override void PerformLoginSteps()
     {
-        Console.Write("Enter username: ");
-        SendKeys(LoginPageConstants.UsernameField.Invoke(_driver), Console.ReadLine() ?? string.Empty);
+        try
+        {
+            Console.Write("Enter username: ");
+            SendKeys(LoginPageConstants.UsernameField.Invoke(_driver), Console.ReadLine() ?? string.Empty);
 
-        Console.Write("Enter password: ");
-        SendKeys(LoginPageConstants.PasswordField.Invoke(_driver), PasswordExtension.ReadPassword() ?? string.Empty);
+            Console.Write("Enter password: ");
+            SendKeys(LoginPageConstants.PasswordField.Invoke(_driver), PasswordExtension.ReadPassword() ?? string.Empty);
 
-        LoginPageConstants.SubmitButton.Invoke(_driver).Submit();
+            LoginPageConstants.SubmitButton.Invoke(_driver).Submit();
+        }
+        catch (Exception ex)
+        {
+            throw new LoginException($"Error during login steps: {ex.Message}");
+        }
     }
 
     protected override void HandleLoginOutcome()
@@ -42,32 +57,22 @@ public class SeleniumAutomation : LoginAutomation
         try
         {
             // Wait until any of the conditions are met: error banner, 2FA prompt, or 'onetap' URL
-            wait.Until(driver =>
-            {
-                return
-                    driver.Url.Contains("accounts/onetap") ||
-                    driver.FindElements(By.XPath("//div[contains(text(),'your password was incorrect.')]")).Count > 0 ||
-                    driver.Url.Contains("https://www.instagram.com/accounts/login/two_factor?next=%2F");
-            });
+            wait.Until(IsLoginSuccessfulOrError);
 
             // Handle error banner if present
-            if (ErrorMessageConstants.ErrorBanner(_driver) is LoginOutcome errorOutcome && errorOutcome != LoginOutcome.Empty)
+            if (ErrorMessageConstants.ErrorBanner(_driver) is LoginOutcome errorOutcome &&
+                errorOutcome != LoginOutcome.Empty)
             {
-                Console.WriteLine(ErrorMessageConstants.IncorrectPasswordMessage);
-                return;
+                throw new LoginException(ErrorMessageConstants.IncorrectPasswordMessage);
             }
 
             // Handle 2FA if present
-            if (TwoFactorAuthConstants.VerificationCodeField(_driver) is LoginOutcome twoFactorOutcome && twoFactorOutcome != LoginOutcome.Empty)
+            if (TwoFactorAuthConstants.VerificationCodeField(_driver) is LoginOutcome twoFactorOutcome &&
+                twoFactorOutcome != LoginOutcome.Empty)
             {
                 if (twoFactorOutcome.Data is IWebElement webElement)
                 {
-                    Console.Write(TwoFactorAuthConstants.TwoFactorPromptMessage);
-                    string code = Console.ReadLine() ?? string.Empty;
-
-                    webElement.SendKeys(code);
-                    webElement.Submit();
-                    return;
+                    HandleTwoFactorAuthentication(webElement);
                 }
             }
 
@@ -75,19 +80,26 @@ public class SeleniumAutomation : LoginAutomation
         }
         catch (WebDriverTimeoutException)
         {
-            throw new TimeoutException(ErrorMessageConstants.LoginTimeoutMessage);
+            Console.WriteLine("Login process timed out. Please check your internet connection or retry.");
+            throw;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"An error occurred: {ex.Message}");
+            Console.WriteLine($"An unexpected error occurred: {ex.Message}");
+            throw;
         }
     }
 
     protected override void SaveInfo()
     {
-
+        var saveInfo = _driver.FindElements(By.XPath("//button[contains(text(),'Save info')]"));
+        if (saveInfo.Count > 0)
+        {
+            saveInfo[0].Click();
+        }
     }
 
+    // helpers
     private string GetFirefoxExecutablePath()
     {
         string firefoxPath = @"C:\Program Files\Firefox Developer Edition\firefox.exe";
@@ -99,5 +111,22 @@ public class SeleniumAutomation : LoginAutomation
         }
 
         return firefoxPath;
+    }
+
+    private bool IsLoginSuccessfulOrError(IWebDriver driver)
+    {
+        return
+            driver.Url.Contains("accounts/onetap") ||
+            driver.FindElements(By.XPath("//div[contains(text(),'your password was incorrect.')]")).Count > 0 ||
+            driver.Url.Contains("https://www.instagram.com/accounts/login/two_factor?next=%2F");
+    }
+
+    private void HandleTwoFactorAuthentication(IWebElement webElement)
+    {
+        Console.Write(TwoFactorAuthConstants.TwoFactorPromptMessage);
+        string code = Console.ReadLine() ?? string.Empty;
+
+        webElement.SendKeys(code);
+        webElement.Submit();
     }
 }
