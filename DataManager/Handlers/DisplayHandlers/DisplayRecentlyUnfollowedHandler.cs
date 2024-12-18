@@ -14,7 +14,7 @@ public class DisplayRecentlyUnfollowedHandler() : BaseOperationHandler
         IFileFormatStrategy strategy = parameters["FileFormatStrategy"] as IFileFormatStrategy
                                          ?? throw new ArgumentNullException(nameof(IFileFormatStrategy));
 
-        IEnumerable<RelationshipData> data = strategy.ProcessFile(filePath, "relationships_follow_requests_received");
+        IEnumerable<RelationshipData> data = strategy.ProcessFile(filePath, "relationships_unfollowed_users");
 
         Console.WriteLine("\nResult\n");
         RelationshipDataMapper.Map(data).DisplayAsTable(ConsoleColor.Gray, "Title", "Href", "Value", "Timestamp");
