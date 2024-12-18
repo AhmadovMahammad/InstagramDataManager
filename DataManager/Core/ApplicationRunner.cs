@@ -43,7 +43,7 @@ public class ApplicationRunner(ICommandHandler handler)
 
     private void DisplayMenu()
     {
-        Console.WriteLine("\nAvailable Operations\n");
+        Console.WriteLine("Available Operations\n");
 
         var menuItems = AppConstant.AvailableOperations
             .Select(op => new MenuModel

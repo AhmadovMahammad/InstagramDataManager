@@ -57,9 +57,11 @@ public abstract class BaseOperationHandler : IOperationHandler
 
     private Dictionary<string, object>? GetWebDriverParameters()
     {
+        SeleniumAutomation? automation = null;
+
         try
         {
-            SeleniumAutomation automation = new SeleniumAutomation();
+            automation = new SeleniumAutomation();
             automation.ExecuteLogin();
 
             return new Dictionary<string, object>
@@ -70,6 +72,8 @@ public abstract class BaseOperationHandler : IOperationHandler
         catch (Exception ex)
         {
             ex.Message.WriteMessage(MessageType.Error);
+            automation?.Driver.Quit();
+
             return null;
         }
     }

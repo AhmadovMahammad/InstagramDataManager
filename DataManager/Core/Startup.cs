@@ -11,6 +11,5 @@ internal static class Startup
         services.AddSingleton<ApplicationRunner>();
         services.AddSingleton<ICommandHandler, CommandHandler>();
         services.AddTransient<IOperationHandler, DisplayFollowersHandler>();
-        // todo: Add other operation handlers here
     }
 }

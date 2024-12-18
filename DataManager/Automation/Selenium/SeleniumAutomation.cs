@@ -91,13 +91,8 @@ public class SeleniumAutomation : LoginAutomation
 
     protected override void SaveInfo()
     {
-        var saveInfo = _driver.FindElements(By.XPath("//button[contains(text(),'Save info')]"));
-        if (saveInfo.Count > 0)
-        {
-            saveInfo[0].Click();
-        }
-
-        "To avoid requiring your username and password each time, your information is retained for the current procedure.".WriteMessage(MessageType.Warning);
+        var saveInfo = _driver.FindElement(By.XPath("//button[text()='Save info']"));
+        saveInfo.Click();
     }
 
     // helpers

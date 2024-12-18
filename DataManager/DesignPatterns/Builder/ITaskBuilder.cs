@@ -5,6 +5,5 @@ public interface ITaskBuilder
 {
     ITaskBuilder NavigateTo(string url);
     ITaskBuilder PerformAction(Action<IWebDriver> action);
-    ITaskBuilder Validate(Action<IWebDriver> validation);
     void ExecuteTasks();
 }
