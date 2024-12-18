@@ -1,4 +1,5 @@
 ﻿using DataManager.Constants;
+using DataManager.Constants.Enums;
 using DataManager.Exceptions;
 using DataManager.Extensions;
 using DataManager.Models;
@@ -76,17 +77,15 @@ public class SeleniumAutomation : LoginAutomation
                 }
             }
 
-            Console.WriteLine("Logined Successfully.");
+            "You successfully logged in.".WriteMessage(MessageType.Success);
         }
         catch (WebDriverTimeoutException)
         {
-            Console.WriteLine("Login process timed out. Please check your internet connection or retry.");
-            throw;
+            throw new LoginException(ErrorMessageConstants.LoginTimeoutMessage);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"An unexpected error occurred: {ex.Message}");
-            throw;
+            throw new LoginException(ex.Message);
         }
     }
 
@@ -97,6 +96,8 @@ public class SeleniumAutomation : LoginAutomation
         {
             saveInfo[0].Click();
         }
+
+        "To avoid requiring your username and password each time, your information is retained for the current procedure.".WriteMessage(MessageType.Warning);
     }
 
     // helpers
@@ -117,8 +118,8 @@ public class SeleniumAutomation : LoginAutomation
     {
         return
             driver.Url.Contains("accounts/onetap") ||
-            driver.FindElements(By.XPath("//div[contains(text(),'your password was incorrect.')]")).Count > 0 ||
-            driver.Url.Contains("https://www.instagram.com/accounts/login/two_factor?next=%2F");
+            driver.Url.Contains("accounts/login/two_factor?next=%2F") ||
+            driver.FindElements(By.XPath("//div[contains(text(),'your password was incorrect.')]")).Count > 0;
     }
 
     private void HandleTwoFactorAuthentication(IWebElement webElement)

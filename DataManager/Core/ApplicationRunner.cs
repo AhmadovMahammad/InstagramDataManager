@@ -1,4 +1,5 @@
-﻿using DataManager.Constants;
+﻿using ConsoleTables;
+using DataManager.Constants;
 using DataManager.Constants.Enums;
 using DataManager.Extensions;
 using DataManager.Models;
@@ -52,7 +53,10 @@ public class ApplicationRunner(ICommandHandler handler)
                 Description = op.Value.description
             }).ToList();
 
-        menuItems.DisplayAsTable(ConsoleColor.Blue, "Key", "Action", "Description");
+        menuItems.DisplayAsTable((ConsoleTable table) =>
+        {
+            table.Options.EnableCount = false;
+        }, "Key", "Action", "Description");
     }
 
     private bool IsExitCommand(string? input)

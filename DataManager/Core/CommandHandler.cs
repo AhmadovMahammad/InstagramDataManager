@@ -1,6 +1,7 @@
 ﻿using DataManager.Constants.Enums;
 using DataManager.Extensions;
 using DataManager.Factories;
+using DataManager.Handlers;
 
 namespace DataManager.Core;
 public interface ICommandHandler
@@ -12,6 +13,13 @@ public class CommandHandler : ICommandHandler // Routes command-line inputs to t
 {
     public void Handle(OperationType operationType)
     {
+        if (operationType == OperationType.ClearConsole)
+        {
+            Console.Clear();
+            Console.WriteLine("\x1b[3J");
+            return;
+        }
+
         // First, check if the operation handler exists for the given operationType.
         // If the handler is null, exit early without needing user input.
         var operationHandler = OperationFactory.CreateHandler(operationType);

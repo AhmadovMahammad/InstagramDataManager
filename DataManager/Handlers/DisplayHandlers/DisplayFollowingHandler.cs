@@ -17,6 +17,6 @@ public class DisplayFollowingHandler() : BaseOperationHandler
         IEnumerable<RelationshipData> data = strategy.ProcessFile(filePath, "relationships_following");
 
         Console.WriteLine("\nResult\n");
-        RelationshipDataMapper.Map(data).DisplayAsTable(ConsoleColor.Gray, "Title", "Href", "Value", "Timestamp");
+        RelationshipDataMapper.Map(data).DisplayAsTable(null, "Title", "Href", "Value", "Timestamp");
     }
 }

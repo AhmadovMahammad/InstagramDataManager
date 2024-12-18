@@ -1,7 +1,7 @@
 ﻿using DataManager.DesignPatterns.Builder;
 using OpenQA.Selenium;
 
-namespace DataManager.Handlers.UnlikeHandlers;
+namespace DataManager.Handlers;
 public class UnlikeAllPostsHandler : BaseOperationHandler
 {
     private readonly string _operationPath = @"https://www.instagram.com/your_activity/interactions/likes/";

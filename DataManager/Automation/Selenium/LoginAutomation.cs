@@ -27,13 +27,9 @@ public abstract class LoginAutomation
             HandleLoginOutcome();
             SaveInfo();
         }
-        catch
+        catch (Exception ex)
         {
-            return;
-        }
-        finally
-        {
-            //_driver.Quit();
+            throw new LoginException($"An error occurred. {ex.Message}");
         }
     }
 

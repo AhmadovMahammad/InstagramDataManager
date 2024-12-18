@@ -6,18 +6,8 @@ public static partial class TableExtension
 {
     public static void DisplayAsTable<T>(
         this IEnumerable<T> data,
-        ConsoleColor consoleColor,
+        Action<ConsoleTable>? configureTable = null,
         params string[] columnNames)
-    {
-        Console.ForegroundColor = consoleColor;
-        data.DisplayTable(columnNames);
-        Console.ResetColor();
-    }
-
-    public static void DisplayTable<T>(
-        this IEnumerable<T> data,
-        string[] columnNames,
-        Action<ConsoleTable>? configureTable = null)
     {
         var table = new ConsoleTable(columnNames);
 
@@ -28,6 +18,6 @@ public static partial class TableExtension
         }
 
         configureTable?.Invoke(table);
-        table.Write(Format.Minimal);
+        table.Write(Format.Default);
     }
 }
