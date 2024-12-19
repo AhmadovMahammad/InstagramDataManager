@@ -5,7 +5,7 @@ using OpenQA.Selenium;
 namespace DataManager.Automation.Selenium;
 public abstract class LoginAutomation
 {
-    protected IWebDriver _driver;
+    public IWebDriver Driver { get; set; }
     protected readonly IChainHandler _validationChain;
     protected bool _errorOccurred;
 
@@ -15,7 +15,7 @@ public abstract class LoginAutomation
             .SetNext(new FileExistsHandler())
             .SetNext(new FileExtensionHandler([".exe"]));
 
-        _driver = InitializeDriver();
+        Driver = InitializeDriver();
     }
 
     public void ExecuteLogin()

@@ -29,12 +29,6 @@ public class SeleniumTaskBuilder : ITaskBuilder
         return this;
     }
 
-    public ITaskBuilder Validate(Action<IWebDriver> validation)
-    {
-        _actions.Add(validation);
-        return this;
-    }
-
     // crucial operation
     public void ExecuteTasks()
     {
