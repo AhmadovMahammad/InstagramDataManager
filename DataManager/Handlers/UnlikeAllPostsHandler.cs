@@ -17,7 +17,7 @@ public class UnlikeAllPostsHandler : BaseOperationHandler
     protected override void Execute(Dictionary<string, object> parameters)
     {
         IWebDriver driver = parameters["WebDriver"] as IWebDriver
-                            ?? throw new ArgumentNullException(nameof(IWebDriver));
+                            ?? throw new Exception(nameof(Execute));
 
         ITaskBuilder builder = new SeleniumTaskBuilder(driver);
         BuildUnlikePostTask(builder).ExecuteTasks();
@@ -26,7 +26,8 @@ public class UnlikeAllPostsHandler : BaseOperationHandler
     private ITaskBuilder BuildUnlikePostTask(ITaskBuilder builder)
     {
         return builder
-            .NavigateTo("https://www.instagram.com/your_activity/interactions/likes/")
+            .NavigateTo(_operationPath)
+            .PerformAction(d => d.Manage().Window.Maximize())
             .PerformAction(ProcessPosts)
             .PerformAction((IWebDriver driver) => driver.Quit());
     }
@@ -43,9 +44,11 @@ public class UnlikeAllPostsHandler : BaseOperationHandler
                 IWebElement webElement = driver.FindElement(By.XPath("//img[@data-bloks-name='bk.components.Image']"));
                 ProcessSinglePost(driver, webElement);
 
-                driver.Navigate().Back();
-                EnsureDomLoaded(driver);
+                string currentUrl = driver.Url;
+                if (!_operationPath.Contains(currentUrl)) driver.Navigate().GoToUrl(_operationPath);
+                else driver.Navigate().Back();
 
+                EnsureDomLoaded(driver);
                 Task.Delay(1000).Wait();
             }
         }
@@ -61,7 +64,7 @@ public class UnlikeAllPostsHandler : BaseOperationHandler
         {
             // scroll to top.
             ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", webElement);
-            new WebDriverWait(driver, TimeSpan.FromSeconds(5)).Until(_ => webElement.Displayed);
+            new WebDriverWait(driver, TimeSpan.FromSeconds(10)).Until(_ => webElement.Displayed);
 
             TryOpenPostAndUnlike(driver, webElement);
         }
