@@ -37,7 +37,6 @@ public class UnlikeAllPostsHandler : BaseOperationHandler
     private void HandleAllPosts(IWebDriver driver)
     {
         "Starting the process of unliking posts...".WriteMessage(MessageType.Info);
-
         EnsureDomLoaded(driver);
 
         while (true)
@@ -50,9 +49,15 @@ public class UnlikeAllPostsHandler : BaseOperationHandler
                     break;
                 }
             }
+            catch (NoSuchElementException ex)
+            {
+                $"Element not found during post processing: {ex.Message}".WriteMessage(MessageType.Warning);
+                break;
+            }
             catch (Exception ex)
             {
-                $"Error processing post: {ex.Message}".WriteMessage(MessageType.Error);
+                $"Unexpected error during post processing: {ex.Message}".WriteMessage(MessageType.Error);
+                break;
             }
         }
     }
@@ -104,16 +109,24 @@ public class UnlikeAllPostsHandler : BaseOperationHandler
             postElement.Click();
             EnsureDomLoaded(driver);
 
-            var unlikeButton = FindElementWithRetries(driver, By.XPath("//*[name()='svg' and @aria-label='Unlike']"));
+            IWebElement? unlikeButton = FindElementWithRetries(driver, By.XPath("//*[name()='svg' and @aria-label='Unlike']"));
             if (unlikeButton is not null)
             {
                 unlikeButton.Click();
                 $"Successfully unliked post #{++_unlikedCount}.".WriteMessage(MessageType.Success);
             }
+            else
+            {
+                $"Unlike button not found for post #{_unlikedCount}".WriteMessage(MessageType.Warning);
+            }
+        }
+        catch (NoSuchElementException ex)
+        {
+            $"Element for unliking not found: {ex.Message}".WriteMessage(MessageType.Error);
         }
         catch (Exception ex)
         {
-            $"Failed to unlike post #{_unlikedCount}: {ex.Message}".WriteMessage(MessageType.Error);
+            $"Unexpected error while unliking post #{_unlikedCount}: {ex.Message}".WriteMessage(MessageType.Error);
         }
         finally
         {

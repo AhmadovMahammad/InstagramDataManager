@@ -20,7 +20,7 @@ public class SeleniumAutomation : LoginAutomation
     protected override void NavigateToLoginPage()
     {
         Driver.Navigate().GoToUrl("https://www.instagram.com/accounts/login/");
-        Console.WriteLine("Instagram login page opened successfully!");
+        "Instagram login page opened successfully!".WriteMessage(MessageType.Success);
     }
 
     protected override void PerformLoginSteps()
