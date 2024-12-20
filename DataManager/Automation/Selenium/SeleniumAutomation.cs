@@ -11,9 +11,12 @@ namespace DataManager.Automation.Selenium;
 public class SeleniumAutomation : LoginAutomation
 {
     public delegate LoginOutcome ConditionDelegate(IWebDriver driver);
-    protected override IWebDriver InitializeDriver() => FirefoxDriverFactory.CreateDriver(_validationChain);
+
+    public SeleniumAutomation() : base() { }
 
     // overriden methods
+    protected override IWebDriver InitializeDriver() => FirefoxDriverFactory.CreateDriver(_validationChain);
+
     protected override void NavigateToLoginPage()
     {
         Driver.Navigate().GoToUrl("https://www.instagram.com/accounts/login/");
@@ -78,6 +81,7 @@ public class SeleniumAutomation : LoginAutomation
 
     protected override void SaveInfo()
     {
+        // todo: heavy loading problem...
         try
         {
             var saveInfo = Driver.FindElement(By.XPath("//button[text()='Save info']"));

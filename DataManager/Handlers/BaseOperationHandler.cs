@@ -4,11 +4,13 @@ using DataManager.Constants.Enums;
 using DataManager.DesignPatterns.Strategy;
 using DataManager.Extensions;
 using DataManager.Factories;
+using OpenQA.Selenium;
 
 namespace DataManager.Handlers;
 public abstract class BaseOperationHandler : IOperationHandler
 {
     public abstract bool RequiresFile { get; }
+    public event Action? OnDriverQuit;
 
     public void HandleOperation()
     {
@@ -29,6 +31,13 @@ public abstract class BaseOperationHandler : IOperationHandler
         catch (Exception)
         {
             Console.WriteLine("Action cannot be carried out due to an error.");
+        }
+        finally
+        {
+            if (!RequiresFile)
+            {
+                OnDriverQuit?.Invoke();
+            }
         }
     }
 
@@ -57,12 +66,15 @@ public abstract class BaseOperationHandler : IOperationHandler
 
     private Dictionary<string, object>? GetWebDriverParameters()
     {
-        SeleniumAutomation? automation = null;
+        SeleniumAutomation automation = null!;
 
         try
         {
             automation = new SeleniumAutomation();
             automation.ExecuteLogin();
+
+            // To exit the program, subscribe to the successful operation finish event.
+            OnDriverQuit += () => QuitDriver(automation.Driver);
 
             return new Dictionary<string, object>
             {
@@ -72,9 +84,12 @@ public abstract class BaseOperationHandler : IOperationHandler
         catch (Exception ex)
         {
             ex.Message.WriteMessage(MessageType.Error);
-            automation?.Driver.Quit();
-
             return null;
         }
+    }
+
+    private static void QuitDriver(IWebDriver driver)
+    {
+        driver?.Quit();
     }
 }

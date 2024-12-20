@@ -8,6 +8,7 @@ namespace DataManager.Factories;
 public class FirefoxDriverFactory
 {
     private static IChainHandler _validationChain = null!;
+    private static readonly string _settingsPath = Path.Combine(Environment.CurrentDirectory, "settings.xml");
 
     public static IWebDriver CreateDriver(IChainHandler validationChain)
     {
@@ -27,14 +28,13 @@ public class FirefoxDriverFactory
         };
 
         // load settings dynamically.
-        string settingsPath = Path.Combine(Environment.CurrentDirectory, "Settings.xml");
-        if (!File.Exists(settingsPath))
+        if (!File.Exists(_settingsPath))
         {
             return defaultOptions;
         }
 
         XmlReaderSettings xmlReaderSettings = new() { IgnoreWhitespace = true, IgnoreComments = true };
-        using FileStream fileStream = new FileStream(settingsPath, FileMode.Open);
+        using FileStream fileStream = new FileStream(_settingsPath, FileMode.Open);
         using XmlReader xmlReader = XmlReader.Create(fileStream, xmlReaderSettings);
 
         while (xmlReader.Read())
@@ -42,21 +42,30 @@ public class FirefoxDriverFactory
             if (xmlReader.NodeType == XmlNodeType.Element)
             {
                 string name = xmlReader.Name;
-                string value = xmlReader.Value;
 
                 switch (name)
                 {
-                    case "profilePath":
-                        if (!string.IsNullOrWhiteSpace(value))
+                    case "headless":
+                        if (xmlReader.Read() && xmlReader.NodeType == XmlNodeType.Text)
                         {
-                            defaultOptions.Profile = new FirefoxProfile(value);
+                            string value = xmlReader.Value;
+                            if (!string.IsNullOrWhiteSpace(value) && bool.TryParse(value, out bool isHeadless) && isHeadless)
+                            {
+                                defaultOptions.AddArgument("--headless");
+                            }
                         }
                         break;
 
-                    case "headless":
-                        if (!string.IsNullOrWhiteSpace(value) && bool.TryParse(value, out bool isHeadless) && isHeadless)
+                    case "disableBotDetection":
+                        if (xmlReader.Read() && xmlReader.NodeType == XmlNodeType.Text)
                         {
-                            defaultOptions.AddArgument("--headless");
+                            string value = xmlReader.Value;
+                            if (!string.IsNullOrWhiteSpace(value) && bool.TryParse(value, out bool disableBotDetection) && disableBotDetection)
+                            {
+                                defaultOptions.AddArgument("--disable-blink-features=AutomationControlled");
+                                defaultOptions.SetPreference("dom.webdriver.enabled", false);
+                                defaultOptions.SetPreference("useAutomationExtension", false);
+                            }
                         }
                         break;
                 }

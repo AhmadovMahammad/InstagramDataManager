@@ -2,6 +2,7 @@
 using DataManager.Constants.Enums;
 using DataManager.DesignPatterns.Builder;
 using DataManager.Extensions;
+using DataManager.Factories;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 
@@ -9,18 +10,19 @@ namespace DataManager.Handlers;
 public class UnlikeAllPostsHandler : BaseOperationHandler
 {
     private readonly string _operationPath = @"https://www.instagram.com/your_activity/interactions/likes/";
-    private int _count;
+    private int _unlikedCount;
     private readonly HashSet<string> _visitedPosts = [];
+    private const int MaxRetries = 3;
 
     public override bool RequiresFile => false;
 
     protected override void Execute(Dictionary<string, object> parameters)
     {
-        IWebDriver driver = parameters["WebDriver"] as IWebDriver
-                            ?? throw new Exception(nameof(Execute));
+        if (!parameters.TryGetValue("WebDriver", out var driverObj) || driverObj is not IWebDriver driver)
+            throw new ArgumentException("Missing or invalid WebDriver in parameters.");
 
-        ITaskBuilder builder = new SeleniumTaskBuilder(driver);
-        BuildUnlikePostTask(builder).ExecuteTasks();
+        var taskBuilder = new SeleniumTaskBuilder(driver);
+        BuildUnlikePostTask(taskBuilder).ExecuteTasks();
     }
 
     private ITaskBuilder BuildUnlikePostTask(ITaskBuilder builder)
@@ -28,88 +30,119 @@ public class UnlikeAllPostsHandler : BaseOperationHandler
         return builder
             .NavigateTo(_operationPath)
             .PerformAction(d => d.Manage().Window.Maximize())
-            .PerformAction(ProcessPosts)
-            .PerformAction((IWebDriver driver) => driver.Quit());
+            .PerformAction(HandleAllPosts)
+            .PerformAction(driver => driver.Quit());
     }
 
-    private void ProcessPosts(IWebDriver driver)
+    private void HandleAllPosts(IWebDriver driver)
     {
-        "Starting the process of unliking posts..".WriteMessage(MessageType.Info);
+        "Starting the process of unliking posts...".WriteMessage(MessageType.Info);
+
         EnsureDomLoaded(driver);
 
-        try
+        while (true)
         {
-            while (true)
+            try
             {
-                IWebElement webElement = driver.FindElement(By.XPath("//img[@data-bloks-name='bk.components.Image']"));
-                ProcessSinglePost(driver, webElement);
-
-                string currentUrl = driver.Url;
-                if (!_operationPath.Contains(currentUrl)) driver.Navigate().GoToUrl(_operationPath);
-                else driver.Navigate().Back();
-
-                EnsureDomLoaded(driver);
-                Task.Delay(1000).Wait();
+                if (!TryProcessNextPost(driver))
+                {
+                    "No more posts found. Exiting...".WriteMessage(MessageType.Warning);
+                    break;
+                }
+            }
+            catch (Exception ex)
+            {
+                $"Error processing post: {ex.Message}".WriteMessage(MessageType.Error);
             }
         }
-        catch (Exception)
-        {
-            $"An error occurred while processing unlike operation.".WriteMessage(MessageType.Error);
-        }
     }
 
-    private void ProcessSinglePost(IWebDriver driver, IWebElement webElement)
+    private bool TryProcessNextPost(IWebDriver driver)
     {
-        if (TryInsert2History(webElement))
-        {
-            // scroll to top.
-            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", webElement);
-            new WebDriverWait(driver, TimeSpan.FromSeconds(10)).Until(_ => webElement.Displayed);
+        var postElement = FindElementWithRetries(driver, By.XPath("//img[@data-bloks-name='bk.components.Image']"));
 
-            TryOpenPostAndUnlike(driver, webElement);
-        }
+        if (postElement == null) return false;
+        if (!AddToVisitedPosts(postElement)) return true;
+
+        ScrollToElement(driver, postElement);
+        OpenAndUnlikePost(driver, postElement);
+
+        return true;
     }
 
-    private bool TryInsert2History(IWebElement webElement)
+    private bool AddToVisitedPosts(IWebElement element)
     {
         try
         {
-            string srcAttrValue = webElement.GetDomAttribute("src");
-            string lastSegment = new Uri(srcAttrValue).Segments.Last().TrimEnd('/');
+            //Sometimes the last part of the image source can be the same, so I should use a unique identifier to distinguish them.
+            string? srcValue = element.GetDomAttribute("src");
+            if (string.IsNullOrWhiteSpace(srcValue))
+            {
+                return false;
+            }
 
-            return _visitedPosts.Add(lastSegment);
+            string hash = srcValue.GetHashCode().ToString("X");
+            return _visitedPosts.Add(hash);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error processing URL: {ex.Message}");
+            $"Error processing post identifier: {ex.Message}".WriteMessage(MessageType.Warning);
             return false;
         }
     }
 
-    private void TryOpenPostAndUnlike(IWebDriver driver, IWebElement webElement)
+    private void ScrollToElement(IWebDriver driver, IWebElement element)
+    {
+        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView(true);", element);
+        WaitForElementVisible(driver, element);
+    }
+
+    private void OpenAndUnlikePost(IWebDriver driver, IWebElement postElement)
     {
         try
         {
-            webElement.Click();
+            postElement.Click();
             EnsureDomLoaded(driver);
 
-            Thread.Sleep(1000);
-
-            IWebElement unlikeIcon = driver.FindElement(By.XPath("//*[name()='svg' and @aria-label='Unlike']"));
-            unlikeIcon.Click();
-
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"[SUCCESS] Post #{++_count} unliked successfully.");
+            var unlikeButton = FindElementWithRetries(driver, By.XPath("//*[name()='svg' and @aria-label='Unlike']"));
+            if (unlikeButton is not null)
+            {
+                unlikeButton.Click();
+                $"Successfully unliked post #{++_unlikedCount}.".WriteMessage(MessageType.Success);
+            }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"[ERROR] Unable to unlike post #{++_count}. Moving it on to the following phase.");
+            $"Failed to unlike post #{_unlikedCount}: {ex.Message}".WriteMessage(MessageType.Error);
         }
         finally
         {
-            Console.ResetColor();
+            driver.Navigate().Back();
+            EnsureDomLoaded(driver);
         }
+    }
+
+    private IWebElement? FindElementWithRetries(IWebDriver driver, By by, int retries = MaxRetries)
+    {
+        for (int attempt = 1; attempt <= retries; attempt++)
+        {
+            try
+            {
+                return driver.FindElement(by);
+            }
+            catch (NoSuchElementException) when (attempt < retries)
+            {
+                $"Retrying to find element ({attempt}/{retries})...".WriteMessage(MessageType.Warning);
+                Task.Delay(2000).Wait();
+            }
+            catch (Exception ex)
+            {
+                $"Error finding element: {ex.Message}".WriteMessage(MessageType.Error);
+                break;
+            }
+        }
+
+        return null;
     }
 
     private void EnsureDomLoaded(IWebDriver driver)
@@ -120,5 +153,11 @@ public class UnlikeAllPostsHandler : BaseOperationHandler
             string? documentReadyState = ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState").ToString();
             return documentReadyState is not null && documentReadyState == "complete";
         });
+    }
+
+    private void WaitForElementVisible(IWebDriver driver, IWebElement element, int timeoutSeconds = 10)
+    {
+        new WebDriverWait(driver, TimeSpan.FromSeconds(timeoutSeconds))
+            .Until(d => element.Displayed);
     }
 }
