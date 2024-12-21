@@ -6,6 +6,7 @@ using DataManager.Factories;
 using DataManager.Models;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
+using SeleniumExtras.WaitHelpers;
 
 namespace DataManager.Automation.Selenium;
 public class SeleniumAutomation : LoginAutomation
@@ -14,7 +15,7 @@ public class SeleniumAutomation : LoginAutomation
 
     public SeleniumAutomation() : base() { }
 
-    // overriden methods
+    // Overridden methods
     protected override IWebDriver InitializeDriver() => FirefoxDriverFactory.CreateDriver(_validationChain);
 
     protected override void NavigateToLoginPage()
@@ -48,25 +49,10 @@ public class SeleniumAutomation : LoginAutomation
         try
         {
             // Wait until any of the conditions are met: error banner, 2FA prompt, or 'onetap' URL
-            wait.Until(IsLoginSuccessfulOrError);
+            wait.Until(driver => IsLoginSuccessfulOrError(driver));
 
-            // Handle error banner if present
-            if (ErrorMessageConstants.ErrorBanner(Driver) is LoginOutcome errorOutcome &&
-                errorOutcome != LoginOutcome.Empty)
-            {
-                throw new LoginException(ErrorMessageConstants.IncorrectPasswordMessage);
-            }
-
-            // Handle 2FA if present
-            if (TwoFactorAuthConstants.VerificationCodeField(Driver) is LoginOutcome twoFactorOutcome &&
-                twoFactorOutcome != LoginOutcome.Empty)
-            {
-                if (twoFactorOutcome.Data is IWebElement webElement)
-                {
-                    HandleTwoFactorAuthentication(webElement);
-                }
-            }
-
+            HandleLoginError();
+            HandleTwoFactorAuthenticationIfNeeded();
             "You successfully logged in.".WriteMessage(MessageType.Success);
         }
         catch (WebDriverTimeoutException)
@@ -81,25 +67,44 @@ public class SeleniumAutomation : LoginAutomation
 
     protected override void SaveInfo()
     {
-        // todo: heavy loading problem...
         try
         {
-            var saveInfo = Driver.FindElement(By.XPath("//button[text()='Save info']"));
-            saveInfo.Click();
+            WebDriverWait wait = new WebDriverWait(Driver, AppTimeoutConstants.ExplicitWait);
+            var saveInfoButton = wait.Until(ExpectedConditions.ElementToBeClickable(By.XPath("//button[text()='Save info']")));
+
+            saveInfoButton.JavaScriptClick();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            throw new LoginException("An error occurred while saving information");
+            throw new LoginException($"An error occurred while saving information: {ex.Message}");
         }
     }
 
-    // helpers
+    // Helper Methods
     private bool IsLoginSuccessfulOrError(IWebDriver driver)
     {
-        return
-            driver.Url.Contains("accounts/onetap") ||
-            driver.Url.Contains("accounts/login/two_factor?next=%2F") ||
-            driver.FindElements(By.XPath("//div[contains(text(),'your password was incorrect.')]")).Count > 0;
+        return driver.Url.Contains("accounts/onetap") ||
+               driver.Url.Contains("accounts/login/two_factor?next=%2F") ||
+               driver.FindElements(By.XPath("//div[contains(text(),'your password was incorrect.')]")).Count > 0;
+    }
+
+    private void HandleLoginError()
+    {
+        if (ErrorMessageConstants.ErrorBanner(Driver) is LoginOutcome errorOutcome && errorOutcome != LoginOutcome.Empty)
+        {
+            throw new LoginException(ErrorMessageConstants.IncorrectPasswordMessage);
+        }
+    }
+
+    private void HandleTwoFactorAuthenticationIfNeeded()
+    {
+        if (TwoFactorAuthConstants.VerificationCodeField(Driver) is LoginOutcome twoFactorOutcome && twoFactorOutcome != LoginOutcome.Empty)
+        {
+            if (twoFactorOutcome.Data is IWebElement webElement)
+            {
+                HandleTwoFactorAuthentication(webElement);
+            }
+        }
     }
 
     private void HandleTwoFactorAuthentication(IWebElement webElement)

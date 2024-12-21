@@ -107,7 +107,7 @@ public class UnlikeAllPostsHandler : BaseOperationHandler
     {
         try
         {
-            postElement.Click();
+            postElement.JavaScriptClick();
             EnsureDomLoaded(driver);
 
             IWebElement? iconElement = FindElementWithRetries(driver, By.XPath("//*[name()='svg' and @role='img' and (@aria-label='Unlike' or @aria-label='Like') and (contains(@class, 'xyb1xck') or contains(@class, 'xxk16z8'))]"));

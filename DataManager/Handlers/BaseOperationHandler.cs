@@ -71,11 +71,11 @@ public abstract class BaseOperationHandler : IOperationHandler
         try
         {
             automation = new SeleniumAutomation();
-            automation.ExecuteLogin();
 
             // To exit the program, subscribe to the successful operation finish event.
             OnDriverQuit += () => QuitDriver(automation.Driver);
 
+            automation.ExecuteLogin();
             return new Dictionary<string, object>
             {
                 { "WebDriver", automation.Driver }
@@ -84,7 +84,7 @@ public abstract class BaseOperationHandler : IOperationHandler
         catch (Exception ex)
         {
             ex.Message.WriteMessage(MessageType.Error);
-            return null;
+            throw;
         }
     }
 

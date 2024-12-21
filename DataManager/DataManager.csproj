@@ -9,6 +9,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="ConsoleTables" Version="2.6.2" />
+		<PackageReference Include="DotNetSeleniumExtras.WaitHelpers" Version="3.11.0" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="Selenium.Support" Version="4.27.0" />

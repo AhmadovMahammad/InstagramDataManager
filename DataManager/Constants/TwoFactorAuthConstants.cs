@@ -1,5 +1,7 @@
 ﻿using DataManager.Models;
 using OpenQA.Selenium;
+using OpenQA.Selenium.Support.UI;
+using SeleniumExtras.WaitHelpers;
 using static DataManager.Automation.Selenium.SeleniumAutomation;
 
 namespace DataManager.Constants;
@@ -9,13 +11,10 @@ public static class TwoFactorAuthConstants
     {
         try
         {
-            var elements = driver.FindElements(By.XPath("//input[@name='verificationCode']"));
-            if (elements.Count > 0 && elements[0].Displayed)
-            {
-                return new LoginOutcome(nameof(TwoFactorAuthConstants), elements[0]);
-            }
+            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
+            var element = wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//input[@name='verificationCode']")));
 
-            return LoginOutcome.Empty;
+            return new LoginOutcome(nameof(TwoFactorAuthConstants), element);
         }
         catch
         {
