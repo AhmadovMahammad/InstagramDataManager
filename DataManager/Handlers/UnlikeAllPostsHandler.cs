@@ -5,6 +5,7 @@ using DataManager.Extensions;
 using DataManager.Factories;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
+using System.Text.Json;
 
 namespace DataManager.Handlers;
 public class UnlikeAllPostsHandler : BaseOperationHandler
@@ -109,20 +110,20 @@ public class UnlikeAllPostsHandler : BaseOperationHandler
             postElement.Click();
             EnsureDomLoaded(driver);
 
-            IWebElement? unlikeButton = FindElementWithRetries(driver, By.XPath("//*[name()='svg' and @aria-label='Unlike']"));
-            if (unlikeButton is not null)
+            IWebElement? iconElement = FindElementWithRetries(driver, By.XPath("//*[name()='svg' and @role='img' and (@aria-label='Unlike' or @aria-label='Like') and (contains(@class, 'xyb1xck') or contains(@class, 'xxk16z8'))]"));
+            if (iconElement is not null)
             {
-                unlikeButton.Click();
-                $"Successfully unliked post #{++_unlikedCount}.".WriteMessage(MessageType.Success);
+                string ariaLabel = iconElement.GetDomAttribute("aria-label");
+                if (ariaLabel == "Unlike")
+                {
+                    iconElement.Click();
+                    $"Successfully unliked post #{++_unlikedCount}.".WriteMessage(MessageType.Success);
+                }
             }
             else
             {
                 $"Unlike button not found for post #{_unlikedCount}".WriteMessage(MessageType.Warning);
             }
-        }
-        catch (NoSuchElementException ex)
-        {
-            $"Element for unliking not found: {ex.Message}".WriteMessage(MessageType.Error);
         }
         catch (Exception ex)
         {
