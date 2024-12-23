@@ -14,8 +14,7 @@ The tool supports the following operations:
 - **...**
 - **Unlike All Posts** (Selenium-based)
 
-![image](https://github.com/user-attachments/assets/83112ae0-09f2-4111-b9d4-f1103dec369a)
-
+![image](https://github.com/user-attachments/assets/56e29a8c-c6d9-4abd-b52c-d79d6e6d4b9b)
 
 ## Browser Support for Selenium-based Operations
 
