@@ -2,10 +2,8 @@
 using DataManager.Constants.Enums;
 using DataManager.DesignPatterns.Builder;
 using DataManager.Extensions;
-using DataManager.Factories;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
-using System.Text.Json;
 
 namespace DataManager.Handlers;
 public class UnlikeAllPostsHandler : BaseOperationHandler
@@ -13,7 +11,8 @@ public class UnlikeAllPostsHandler : BaseOperationHandler
     private readonly string _operationPath = @"https://www.instagram.com/your_activity/interactions/likes/";
     private int _unlikedCount;
     private readonly HashSet<string> _visitedPosts = [];
-    private const int MaxRetries = 3;
+    private readonly Dictionary<string, int> _retryCounts = [];
+    private const int MaxRetryPerPost = 3;
 
     public override bool RequiresFile => false;
 
@@ -66,8 +65,11 @@ public class UnlikeAllPostsHandler : BaseOperationHandler
     private bool TryProcessNextPost(IWebDriver driver)
     {
         var postElement = FindElementWithRetries(driver, By.XPath("//img[@data-bloks-name='bk.components.Image']"));
-
-        if (postElement == null) return false;
+        if (postElement == null)
+        {
+            "Unable to locate a post that was liked".WriteMessage(MessageType.Warning);
+            return false;
+        }
         if (!AddToVisitedPosts(postElement)) return true;
 
         ScrollToElement(driver, postElement);
@@ -76,19 +78,37 @@ public class UnlikeAllPostsHandler : BaseOperationHandler
         return true;
     }
 
+    // 2ac24f8e-fd6a-4f53-bf0f-9d226abe7bfb
     private bool AddToVisitedPosts(IWebElement element)
     {
         try
         {
             //Sometimes the last part of the image source can be the same, so I should use a unique identifier to distinguish them.
             string? srcValue = element.GetDomAttribute("src");
-            if (string.IsNullOrWhiteSpace(srcValue))
+            if (string.IsNullOrWhiteSpace(srcValue)) return false;
+
+            if (!_retryCounts.TryGetValue(srcValue, out int value))
             {
-                return false;
+                value = 0;
+                _retryCounts[srcValue] = value;
             }
 
-            string hash = srcValue.GetHashCode().ToString("X");
-            return _visitedPosts.Add(hash);
+            if (value >= MaxRetryPerPost)
+            {
+                throw new InvalidOperationException($"Post reached max retry limit ({MaxRetryPerPost}).");
+            }
+
+            if (_visitedPosts.Add(srcValue))
+            {
+                _retryCounts.Remove(srcValue);
+                return true;
+            }
+            else
+            {
+                _retryCounts[srcValue]++;
+                $"Post already visited. Retry #{_retryCounts[srcValue]}.".WriteMessage(MessageType.Warning);
+                return false;
+            }
         }
         catch (Exception ex)
         {
@@ -107,7 +127,7 @@ public class UnlikeAllPostsHandler : BaseOperationHandler
     {
         try
         {
-            postElement.JavaScriptClick();
+            postElement.Click();
             EnsureDomLoaded(driver);
 
             IWebElement? iconElement = FindElementWithRetries(driver, By.XPath("//*[name()='svg' and @role='img' and (@aria-label='Unlike' or @aria-label='Like') and (contains(@class, 'xyb1xck') or contains(@class, 'xxk16z8'))]"));
@@ -136,7 +156,7 @@ public class UnlikeAllPostsHandler : BaseOperationHandler
         }
     }
 
-    private IWebElement? FindElementWithRetries(IWebDriver driver, By by, int retries = MaxRetries)
+    private IWebElement? FindElementWithRetries(IWebDriver driver, By by, int retries = MaxRetryPerPost)
     {
         for (int attempt = 1; attempt <= retries; attempt++)
         {
