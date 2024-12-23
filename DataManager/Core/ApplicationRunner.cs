@@ -11,7 +11,7 @@ public class ApplicationRunner(ICommandHandler handler)
 
     public void Run()
     {
-        Console.WriteLine("Welcome to Instagram Data Manager!");
+        ConsoleExtension.PrintBanner();
 
         string? input = string.Empty;
         while (!IsExitCommand(input))

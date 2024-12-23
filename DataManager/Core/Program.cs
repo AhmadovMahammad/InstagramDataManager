@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using DataManager.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Runtime.InteropServices;
 
 namespace DataManager.Core;
 internal class Program
@@ -8,27 +10,38 @@ internal class Program
 
     private static void Main(string[] args)
     {
-        using Mutex mutex = new Mutex(true, @"Global\InstagramDataManager");
-
-        // Try to acquire the mutex for up to 3 seconds.
-        if (!mutex.WaitOne(TimeSpan.FromSeconds(3)))
+        try
         {
-            Console.WriteLine("Another instance of the app is running! Press Any Key To Exit...");
-            Console.ReadKey();
-            return;
-        }
+            using Mutex mutex = new Mutex(true, @"Global\InstagramDataManager");
 
-        CreateHostBuilder(args);
-        RunApplication();
+            // Try to acquire the mutex for up to 3 seconds.
+            if (!mutex.WaitOne(TimeSpan.FromSeconds(3)))
+            {
+                Console.WriteLine("Another instance of the app is running! Press Any Key To Exit...");
+                Console.ReadKey();
+                return;
+            }
+
+            ConsoleExtension.MaximizeConsoleWindow();
+
+            _host = CreateHostBuilder(args).Build();
+            RunApplication();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
+            Console.WriteLine("Press any key to exit...");
+            Console.ReadKey();
+        }
     }
 
-    private static void CreateHostBuilder(string[] args)
+    private static IHostBuilder CreateHostBuilder(string[] args)
     {
-        _host = Host.CreateDefaultBuilder(args)
-            .ConfigureServices((_, serviceCollection) =>
+        return Host.CreateDefaultBuilder(args)
+            .ConfigureServices((_, services) =>
             {
-                Startup.ConfigureServices(serviceCollection);
-            }).Build();
+                Startup.ConfigureServices(services);
+            });
     }
 
     private static void RunApplication()
