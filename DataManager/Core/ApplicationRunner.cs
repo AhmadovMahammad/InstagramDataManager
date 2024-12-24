@@ -1,8 +1,10 @@
 ﻿using ConsoleTables;
+using DataManager.Automation.Selenium;
 using DataManager.Constants;
 using DataManager.Constants.Enums;
 using DataManager.Extensions;
 using DataManager.Models;
+using OpenQA.Selenium;
 
 namespace DataManager.Core;
 public class ApplicationRunner(ICommandHandler handler)
@@ -13,31 +15,48 @@ public class ApplicationRunner(ICommandHandler handler)
     {
         ConsoleExtension.PrintBanner();
 
-        string? input = string.Empty;
-        while (!IsExitCommand(input))
+        bool loginSuccessful;
+        IWebDriver? webDriver;
+
+        do
         {
-            DisplayMenu();
+            Console.WriteLine("To perform any operation, you must sign in to your Instagram account. Please note that your credentials will be deleted when the program ends.\n\n");
+            (loginSuccessful, webDriver) = TryStartDriver();
 
-            Console.Write("\nOperation (Enter a number for an operation or type 'exit' to quit): ");
-            input = Console.ReadLine()?.ToLower();
-
-            if (IsExitCommand(input)) break;
-
-            if (IsValidOperationInput(input, out int operationId))
+            if (loginSuccessful)
             {
-                try
-                {
-                    _handler.Handle((OperationType)operationId);
-                }
-                catch (Exception ex)
-                {
-                    ex.Message.WriteMessage(MessageType.Error);
-                }
+                //todo
             }
             else
             {
-                "Invalid operation number. Please try again.".WriteMessage(MessageType.Error);
+                webDriver?.Quit();
+
+                Console.WriteLine("Login failed. Would you like to try again? (y/n)");
+                string? retry = Console.ReadLine()?.ToLower();
+
+                if (retry != "y")
+                {
+                    break;
+                }
             }
+        } while (!loginSuccessful && webDriver is not null);
+    }
+
+    private (bool, IWebDriver?) TryStartDriver()
+    {
+        SeleniumAutomation automation = null!;
+
+        try
+        {
+            automation = new SeleniumAutomation();
+            automation.ExecuteLogin();
+
+            return (true, automation.Driver);
+        }
+        catch (Exception ex)
+        {
+            ex.Message.WriteMessage(MessageType.Error);
+            return (false, automation.Driver);
         }
     }
 
@@ -57,9 +76,13 @@ public class ApplicationRunner(ICommandHandler handler)
         }, "Key", "Action", "Description");
     }
 
-    private bool IsExitCommand(string? input)
-     => string.Equals(input, "exit", StringComparison.OrdinalIgnoreCase);
+    //private bool IsExitCommand(string? input)
+    //{
+    //    return string.Equals(input, "exit", StringComparison.OrdinalIgnoreCase);
+    //}
 
-    private bool IsValidOperationInput(string? input, out int operationId)
-        => int.TryParse(input, out operationId) && AppConstant.AvailableOperations.ContainsKey(operationId);
+    //private bool IsValidOperationInput(string? input, out int operationId)
+    //{
+    //    return int.TryParse(input, out operationId) && AppConstant.AvailableOperations.ContainsKey(operationId);
+    //}
 }

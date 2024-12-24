@@ -5,7 +5,7 @@ using OpenQA.Selenium;
 namespace DataManager.Automation.Selenium;
 public abstract class LoginAutomation
 {
-    public IWebDriver Driver { get; set; }
+    public IWebDriver Driver { get; }
     protected readonly IChainHandler _validationChain;
     protected bool _errorOccurred;
 
