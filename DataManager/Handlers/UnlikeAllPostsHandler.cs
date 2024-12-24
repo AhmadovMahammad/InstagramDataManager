@@ -10,8 +10,7 @@ public class UnlikeAllPostsHandler : BaseOperationHandler
 {
     private readonly string _operationPath = @"https://www.instagram.com/your_activity/interactions/likes/";
     private int _unlikedCount;
-    private readonly HashSet<string> _visitedPosts = [];
-    private readonly Dictionary<string, int> _retryCounts = [];
+    private readonly Dictionary<string, int> _visitedPosts = [];
     private const int MaxRetryPerPost = 3;
 
     public override bool RequiresFile => false;
@@ -78,37 +77,33 @@ public class UnlikeAllPostsHandler : BaseOperationHandler
         return true;
     }
 
-    // 2ac24f8e-fd6a-4f53-bf0f-9d226abe7bfb
     private bool AddToVisitedPosts(IWebElement element)
     {
         try
         {
-            //Sometimes the last part of the image source can be the same, so I should use a unique identifier to distinguish them.
             string? srcValue = element.GetDomAttribute("src");
-            if (string.IsNullOrWhiteSpace(srcValue)) return false;
-
-            if (!_retryCounts.TryGetValue(srcValue, out int value))
+            if (string.IsNullOrWhiteSpace(srcValue))
             {
-                value = 0;
-                _retryCounts[srcValue] = value;
+                return false;
             }
 
-            if (value >= MaxRetryPerPost)
+            // Check if the post has already been visited.
+            if (!_visitedPosts.TryGetValue(srcValue, out int postAccessCount))
+            {
+                _visitedPosts[srcValue] = 0;
+                return true; // Indicate that the post is newly visited.
+            }
+
+            // If the post has been accessed beyond the allowed retry limit, throw an exception.
+            if (postAccessCount >= MaxRetryPerPost)
             {
                 throw new InvalidOperationException($"Post reached max retry limit ({MaxRetryPerPost}).");
             }
 
-            if (_visitedPosts.Add(srcValue))
-            {
-                _retryCounts.Remove(srcValue);
-                return true;
-            }
-            else
-            {
-                _retryCounts[srcValue]++;
-                $"Post already visited. Retry #{_retryCounts[srcValue]}.".WriteMessage(MessageType.Warning);
-                return false;
-            }
+            // Increment the retry count and log a warning.
+            _visitedPosts[srcValue] = ++postAccessCount;
+            $"Post already visited. Retry #{postAccessCount}.".WriteMessage(MessageType.Warning);
+            return false; // Indicate that the post was already visited.
         }
         catch (Exception ex)
         {
@@ -116,6 +111,7 @@ public class UnlikeAllPostsHandler : BaseOperationHandler
             return false;
         }
     }
+
 
     private void ScrollToElement(IWebDriver driver, IWebElement element)
     {

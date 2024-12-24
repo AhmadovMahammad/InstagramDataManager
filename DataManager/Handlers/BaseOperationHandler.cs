@@ -71,8 +71,6 @@ public abstract class BaseOperationHandler : IOperationHandler
         try
         {
             automation = new SeleniumAutomation();
-
-            // To exit the program, subscribe to the successful operation finish event.
             OnDriverQuit += () => QuitDriver(automation.Driver);
 
             automation.ExecuteLogin();
