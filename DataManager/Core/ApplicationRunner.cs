@@ -2,44 +2,52 @@
 using DataManager.Automation.Selenium;
 using DataManager.Constants;
 using DataManager.Constants.Enums;
-using DataManager.Extensions;
+using DataManager.Helpers.Extensions;
 using DataManager.Models;
 using OpenQA.Selenium;
 
 namespace DataManager.Core;
-public class ApplicationRunner(ICommandHandler handler)
+public class ApplicationRunner
 {
-    private readonly ICommandHandler _handler = handler ?? throw new ArgumentNullException(nameof(handler));
+    private readonly ICommandHandler _handler;
+    private readonly IEnumerable<MenuModel> _availableOperations;
+
+    public ApplicationRunner(ICommandHandler handler)
+    {
+        _handler = handler ?? throw new ArgumentNullException(nameof(handler));
+        _availableOperations = AppConstant.GetAvailableOperations();
+    }
 
     public void Run()
     {
         ConsoleExtension.PrintBanner();
 
         bool loginSuccessful;
-        IWebDriver? webDriver;
+        IWebDriver? webDriver = null;
 
         do
         {
-            Console.WriteLine("To perform any operation, you must sign in to your Instagram account. Please note that your credentials will be deleted when the program ends.\n\n");
-            (loginSuccessful, webDriver) = TryStartDriver();
-
-            if (loginSuccessful)
+            if (!ConsoleExtension.AskToProceed("To perform any operation, you must sign in to your Instagram account.\nDo you want to keep logging into your account? (y/n)"))
             {
-                //todo
+                break;
+            }
+
+            (loginSuccessful, webDriver) = TryStartDriver();
+            if (loginSuccessful && webDriver != null)
+            {
+                HandleCommands(webDriver);
             }
             else
             {
                 webDriver?.Quit();
 
-                Console.WriteLine("Login failed. Would you like to try again? (y/n)");
-                string? retry = Console.ReadLine()?.ToLower();
-
-                if (retry != "y")
+                if (!ConsoleExtension.AskToProceed("Login failed. Would you like to try again? (y/n)"))
                 {
                     break;
                 }
             }
-        } while (!loginSuccessful && webDriver is not null);
+
+        } while (!loginSuccessful && webDriver != null);
     }
 
     private (bool, IWebDriver?) TryStartDriver()
@@ -50,7 +58,6 @@ public class ApplicationRunner(ICommandHandler handler)
         {
             automation = new SeleniumAutomation();
             automation.ExecuteLogin();
-
             return (true, automation.Driver);
         }
         catch (Exception ex)
@@ -60,29 +67,62 @@ public class ApplicationRunner(ICommandHandler handler)
         }
     }
 
+    private void HandleCommands(IWebDriver webDriver)
+    {
+        string? input = string.Empty;
+        while (!string.Equals(input, "exit", StringComparison.OrdinalIgnoreCase))
+        {
+            DisplayMenu();
+
+            Console.WriteLine("\nCommand (Enter a number for command or type 'exit' to quit)");
+            Console.Write("> ");
+
+            input = Console.ReadLine()?.ToLower();
+            if (string.Equals(input, "exit", StringComparison.OrdinalIgnoreCase))
+            {
+                break;
+            }
+
+            if (TryGetCommandId(input, out int commandId))
+            {
+                try
+                {
+                    _handler.Handle((CommandType)commandId, webDriver);
+                }
+                catch (Exception ex)
+                {
+                    ex.Message.WriteMessage(MessageType.Error);
+                }
+            }
+            else
+            {
+                "Invalid command number. Please try again.".WriteMessage(MessageType.Error);
+            }
+        }
+    }
+
     private void DisplayMenu()
     {
-        var menuItems = AppConstant.AvailableOperations
-            .Select(op => new MenuModel
-            {
-                Key = op.Key,
-                Action = op.Value.action,
-                Description = op.Value.description
-            }).ToList();
-
-        menuItems.DisplayAsTable((ConsoleTable table) =>
+        _availableOperations.DisplayAsTable((ConsoleTable table) =>
         {
             table.Options.EnableCount = false;
         }, "Key", "Action", "Description");
     }
 
-    //private bool IsExitCommand(string? input)
-    //{
-    //    return string.Equals(input, "exit", StringComparison.OrdinalIgnoreCase);
-    //}
+    private bool TryGetCommandId(string? input, out int commandId)
+    {
+        commandId = 0;
 
-    //private bool IsValidOperationInput(string? input, out int operationId)
-    //{
-    //    return int.TryParse(input, out operationId) && AppConstant.AvailableOperations.ContainsKey(operationId);
-    //}
+        if (int.TryParse(input, out int parsedId))
+        {
+            var command = _availableOperations.FirstOrDefault(m => m.Key == parsedId);
+            if (command != null)
+            {
+                commandId = parsedId;
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

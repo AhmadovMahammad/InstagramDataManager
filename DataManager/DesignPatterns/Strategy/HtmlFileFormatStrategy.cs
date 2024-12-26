@@ -1,5 +1,5 @@
 ﻿using DataManager.Constants.Enums;
-using DataManager.Extensions;
+using DataManager.Helpers.Extensions;
 using DataManager.Models.JsonModels;
 
 namespace DataManager.DesignPatterns.Strategy;

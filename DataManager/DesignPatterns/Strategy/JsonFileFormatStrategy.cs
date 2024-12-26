@@ -30,7 +30,7 @@ public class JsonFileFormatStrategy : IFileFormatStrategy
             if (childItem.ValueKind == JsonValueKind.Object)
             {
                 RelationshipData? data = JsonSerializer.Deserialize<RelationshipData>(childItem.GetRawText());
-                if (data is not null)
+                if (data != null)
                 {
                     yield return data;
                 }
@@ -40,9 +40,9 @@ public class JsonFileFormatStrategy : IFileFormatStrategy
 
     private IEnumerable<RelationshipData> ProcessObject(JsonElement objectElement, string rootElementPath)
     {
-        if (string.IsNullOrEmpty(rootElementPath)) throw new ArgumentException("Root element path must be provided for processing JSON objects.", nameof(rootElementPath));
-        if (!objectElement.TryGetProperty(rootElementPath, out JsonElement nestedElement)) throw new KeyNotFoundException($"Root element '{rootElementPath}' not found in the JSON.");
-        if (nestedElement.ValueKind != JsonValueKind.Array) throw new InvalidOperationException($"The specified root element '{rootElementPath}' is not an array.");
+        if (string.IsNullOrEmpty(rootElementPath)) throw new ArgumentException("Root webElement path must be provided for processing JSON objects.", nameof(rootElementPath));
+        if (!objectElement.TryGetProperty(rootElementPath, out JsonElement nestedElement)) throw new KeyNotFoundException($"Root webElement '{rootElementPath}' not found in the JSON.");
+        if (nestedElement.ValueKind != JsonValueKind.Array) throw new InvalidOperationException($"The specified root webElement '{rootElementPath}' != an array.");
 
         return ProcessArray(nestedElement);
     }

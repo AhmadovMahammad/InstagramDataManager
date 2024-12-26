@@ -6,17 +6,17 @@ public class SeleniumTaskBuilder : ITaskBuilder
     private readonly IWebDriver _driver;
     private readonly HashSet<Action<IWebDriver>> _actions;
 
-    public SeleniumTaskBuilder(IWebDriver driver)
+    public SeleniumTaskBuilder(IWebDriver webDriver)
     {
-        _driver = driver;
+        _driver = webDriver;
         _actions = new HashSet<Action<IWebDriver>>();
     }
 
     public ITaskBuilder NavigateTo(string url)
     {
-        _actions.Add((IWebDriver driver) =>
+        _actions.Add((IWebDriver webDriver) =>
         {
-            driver.Navigate().GoToUrl(url);
+            webDriver.Navigate().GoToUrl(url);
             Console.WriteLine($"Navigated to {url}");
         });
 

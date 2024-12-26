@@ -1,5 +1,5 @@
 ﻿using DataManager.Constants.Enums;
-using DataManager.Extensions;
+using DataManager.Helpers.Extensions;
 
 namespace DataManager.DesignPatterns.ChainOfResponsibility;
 public class FileExistsHandler : AbstractHandler

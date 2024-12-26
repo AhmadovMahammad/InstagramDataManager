@@ -7,14 +7,14 @@ using static DataManager.Automation.Selenium.SeleniumAutomation;
 namespace DataManager.Constants;
 public static class ErrorMessageConstants
 {
-    public static readonly ConditionDelegate ErrorBanner = (driver) =>
+    public static readonly ConditionDelegate ErrorBanner = (webDriver) =>
     {
         try
         {
-            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
-            var element = wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//div[contains(text(),'your password was incorrect.')]")));
+            WebDriverWait wait = new WebDriverWait(webDriver, TimeSpan.FromSeconds(5));
+            var webElement = wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//div[contains(text(),'your password was incorrect.')]")));
 
-            return new LoginOutcome(nameof(ErrorMessageConstants), element);
+            return new LoginOutcome(nameof(ErrorMessageConstants), webElement);
         }
         catch
         {

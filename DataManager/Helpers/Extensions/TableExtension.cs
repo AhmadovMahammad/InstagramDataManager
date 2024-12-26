@@ -1,7 +1,7 @@
 ﻿using ConsoleTables;
 using System.Reflection;
 
-namespace DataManager.Extensions;
+namespace DataManager.Helpers.Extensions;
 public static partial class TableExtension
 {
     public static void DisplayAsTable<T>(
@@ -18,6 +18,6 @@ public static partial class TableExtension
         }
 
         configureTable?.Invoke(table);
-        table.Write(Format.Default);
+        table.Write(Format.Minimal);
     }
 }

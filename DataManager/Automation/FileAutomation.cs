@@ -1,5 +1,7 @@
 ﻿using DataManager.DesignPatterns.ChainOfResponsibility;
 using DataManager.DesignPatterns.Strategy;
+using Microsoft.Win32;
+using System.IO;
 
 namespace DataManager.Automation;
 public class FileAutomation
@@ -29,7 +31,9 @@ public class FileAutomation
     // Prompt for file path
     private string GetFilePath()
     {
-        Console.Write("Enter the file path to proceed: ");
+        Console.WriteLine("Enter the file path to proceed");
+        Console.Write("> ");
+
         return Console.ReadLine() ?? string.Empty;
     }
 

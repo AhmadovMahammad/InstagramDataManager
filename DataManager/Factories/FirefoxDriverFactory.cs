@@ -12,19 +12,21 @@ public class FirefoxDriverFactory
 
     public static IWebDriver CreateDriver(IChainHandler validationChain)
     {
+        Console.WriteLine("\n"); // Firefox options are separated from the application menu using the Line Feed (LF). 
         _validationChain = validationChain;
 
-        var driver = new FirefoxDriver(GetFirefoxOptions());
-        driver.Manage().Timeouts().ImplicitWait = AppTimeoutConstants.ImplicitWait;
+        var webDriver = new FirefoxDriver(GetFirefoxOptions());
+        webDriver.Manage().Timeouts().ImplicitWait = AppConstant.ImplicitWait;
 
-        return driver;
+        return webDriver;
     }
 
     private static FirefoxOptions? GetFirefoxOptions()
     {
         FirefoxOptions defaultOptions = new FirefoxOptions()
         {
-            BinaryLocation = GetFirefoxExecutablePath()
+            BinaryLocation = GetFirefoxExecutablePath(),
+            LogLevel = FirefoxDriverLogLevel.Fatal
         };
 
         // load settings dynamically.

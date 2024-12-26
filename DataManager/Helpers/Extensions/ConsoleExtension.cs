@@ -1,14 +1,14 @@
 ﻿using DataManager.Constants.Enums;
 using System.Runtime.InteropServices;
 
-namespace DataManager.Extensions;
+namespace DataManager.Helpers.Extensions;
 public static partial class ConsoleExtension
 {
     [DllImport("kernel32.dll", ExactSpelling = true)]
-    private static extern IntPtr GetConsoleWindow();
+    private static extern nint GetConsoleWindow();
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+    private static extern bool ShowWindow(nint hWnd, int nCmdShow);
 
     private const int SW_MAXIMIZE = 3;
 
@@ -33,8 +33,8 @@ public static partial class ConsoleExtension
 
     public static void MaximizeConsoleWindow()
     {
-        IntPtr consoleWindow = GetConsoleWindow();
-        if (consoleWindow != IntPtr.Zero)
+        nint consoleWindow = GetConsoleWindow();
+        if (consoleWindow != nint.Zero)
         {
             ShowWindow(consoleWindow, SW_MAXIMIZE);
         }
@@ -51,6 +51,15 @@ public static partial class ConsoleExtension
 |_____/   \__,_|  \__|  \__,_|   |_|  |_|  \__,_| |_| |_|  \__,_|  \__, |  \___| |_|   
                                                                     __/ |              
                                                                    |___/               
-        ");
+                ");
+    }
+
+    public static bool AskToProceed(this string message)
+    {
+        Console.WriteLine(message);
+        Console.Write("> ");
+
+        string? userInput = Console.ReadLine()?.ToLower();
+        return userInput == "y";
     }
 }

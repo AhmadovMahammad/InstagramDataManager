@@ -1,8 +1,8 @@
 ﻿using DataManager.Constants;
 using DataManager.Constants.Enums;
 using DataManager.Exceptions;
-using DataManager.Extensions;
 using DataManager.Factories;
+using DataManager.Helpers.Extensions;
 using DataManager.Models;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
@@ -11,7 +11,7 @@ using SeleniumExtras.WaitHelpers;
 namespace DataManager.Automation.Selenium;
 public class SeleniumAutomation : LoginAutomation
 {
-    public delegate LoginOutcome ConditionDelegate(IWebDriver driver);
+    public delegate LoginOutcome ConditionDelegate(IWebDriver webDriver);
 
     public SeleniumAutomation() : base() { }
 
@@ -29,12 +29,14 @@ public class SeleniumAutomation : LoginAutomation
         try
         {
             Console.Write("Enter username: ");
-            SendKeys(LoginPageConstants.UsernameField.Invoke(Driver), Console.ReadLine() ?? string.Empty);
+            IWebElement usernameField = Driver.FindElement(By.XPath("//input[@name='username']"));
+            SendKeys(usernameField, Console.ReadLine() ?? string.Empty);
 
             Console.Write("Enter password: ");
-            SendKeys(LoginPageConstants.PasswordField.Invoke(Driver), PasswordExtension.ReadPassword() ?? string.Empty);
+            IWebElement passwordField = Driver.FindElement(By.XPath("//input[@name='password']"));
+            SendKeys(passwordField, PasswordExtension.ReadPassword() ?? string.Empty);
 
-            LoginPageConstants.SubmitButton.Invoke(Driver).Submit();
+            Driver.FindElement(By.XPath("//button[@type='submit']")).Submit();
         }
         catch (Exception ex)
         {
@@ -44,12 +46,12 @@ public class SeleniumAutomation : LoginAutomation
 
     protected override void HandleLoginOutcome()
     {
-        WebDriverWait wait = new WebDriverWait(Driver, AppTimeoutConstants.ExplicitWait);
+        WebDriverWait wait = new WebDriverWait(Driver, AppConstant.ExplicitWait);
 
         try
         {
             // Wait until any of the conditions are met: error banner, 2FA prompt, or 'onetap' URL
-            wait.Until(driver => IsLoginSuccessfulOrError(driver));
+            wait.Until(webDriver => IsLoginSuccessfulOrError(webDriver));
 
             HandleLoginError();
             HandleTwoFactorAuthenticationIfNeeded();
@@ -69,7 +71,7 @@ public class SeleniumAutomation : LoginAutomation
     {
         try
         {
-            WebDriverWait wait = new WebDriverWait(Driver, AppTimeoutConstants.ExplicitWait);
+            WebDriverWait wait = new WebDriverWait(Driver, AppConstant.ExplicitWait);
             var saveInfoButton = wait.Until(ExpectedConditions.ElementToBeClickable(By.XPath("//button[text()='Save info']")));
 
             saveInfoButton.JavaScriptClick();
@@ -81,11 +83,11 @@ public class SeleniumAutomation : LoginAutomation
     }
 
     // Helper Methods
-    private bool IsLoginSuccessfulOrError(IWebDriver driver)
+    private bool IsLoginSuccessfulOrError(IWebDriver webDriver)
     {
-        return driver.Url.Contains("accounts/onetap") ||
-               driver.Url.Contains("accounts/login/two_factor?next=%2F") ||
-               driver.FindElements(By.XPath("//div[contains(text(),'your password was incorrect.')]")).Count > 0;
+        return webDriver.Url.Contains("accounts/onetap") ||
+               webDriver.Url.Contains("accounts/login/two_factor?next=%2F") ||
+               webDriver.FindElements(By.XPath("//div[contains(text(),'your password was incorrect.')]")).Count > 0;
     }
 
     private void HandleLoginError()

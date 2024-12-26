@@ -12,7 +12,7 @@ public abstract class AbstractHandler : IChainHandler
         else
         {
             IChainHandler currentHandler = _nextHandler;
-            while (currentHandler is AbstractHandler abstractHandler && abstractHandler._nextHandler is not null)
+            while (currentHandler is AbstractHandler abstractHandler && abstractHandler._nextHandler != null)
             {
                 currentHandler = abstractHandler._nextHandler;
             }

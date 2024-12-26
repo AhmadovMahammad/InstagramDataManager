@@ -1,4 +1,4 @@
-﻿namespace DataManager.Extensions;
+﻿namespace DataManager.Helpers.Extensions;
 public static partial class PasswordExtension
 {
     public static string ReadPassword()
