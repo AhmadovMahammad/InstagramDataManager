@@ -40,11 +40,12 @@ public class ApplicationRunner
             else
             {
                 webDriver?.Quit();
-
                 if (!ConsoleExtension.AskToProceed("Login failed. Would you like to try again? (y/n)"))
                 {
                     break;
                 }
+                
+                Console.WriteLine("\n");
             }
 
         } while (!loginSuccessful && webDriver != null);

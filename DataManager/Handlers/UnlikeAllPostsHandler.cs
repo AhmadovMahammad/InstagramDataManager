@@ -127,15 +127,6 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
             postElement.Click();
             WebDriverExtension.EnsureDomLoaded(webDriver);
 
-            // Check for "Something went wrong" message at first
-            bool somethingWentWrong = webDriver.FindElements(By.XPath("//span[contains(text(),'Something went wrong')]")).Count != 0;
-            if (somethingWentWrong)
-            {
-                $"Post could not be opened, adding to blacklist.".WriteMessage(MessageType.Warning);
-                _blackList.Add(webDriver.Url);
-                return;
-            }
-
             IWebElement? iconElement = FindElementWithRetries(webDriver, "Unlike Button", By.XPath(UnlikeButtonXPath));
             if (iconElement != null)
             {
