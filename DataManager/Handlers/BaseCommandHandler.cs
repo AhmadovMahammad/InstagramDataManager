@@ -25,7 +25,7 @@ public abstract class BaseCommandHandler : ICommandHandler
 
             if ((OperationType & OperationType.FileBased) != 0)
             {
-                var fileParameters = TryGetFileParameters();
+                var fileParameters = TryGetFileParameters;
                 if (fileParameters is null)
                 {
                     "Operation Aborted".WriteMessage(MessageType.Error);
@@ -37,34 +37,42 @@ public abstract class BaseCommandHandler : ICommandHandler
 
             Execute(defaultParameters);
         }
+        catch (InvalidOperationException ex)
+        {
+            ex.LogException("Invalid operation during command execution.");
+            throw;
+        }
         catch (Exception ex)
         {
-            ex.Message.WriteMessage(MessageType.Error);
+            ex.LogException("Unexpected error during command execution.");
             throw new InvalidOperationException("An error occurred during the operation execution.", ex);
         }
     }
 
-    private Dictionary<string, object>? TryGetFileParameters()
+    private static Dictionary<string, object>? TryGetFileParameters
     {
-        try
+        get
         {
-            var automation = new FileAutomation();
-            (string filePath, IFileFormatStrategy? strategy) = automation.GetParams();
-
-            return new Dictionary<string, object>
+            try
             {
-                { "FilePath", filePath },
-                { "FileFormatStrategy", strategy ?? new JsonFileFormatStrategy() }
-            };
-        }
-        catch (Exception ex)
-        {
-            ex.Message.WriteMessage(MessageType.Error);
-            return null;
+                var automation = new FileAutomation();
+                (string filePath, IFileFormatStrategy? strategy) = automation.GetParams();
+
+                return new Dictionary<string, object>
+                {
+                    { "FilePath", filePath },
+                    { "FileFormatStrategy", strategy ?? new JsonFileFormatStrategy() }
+                };
+            }
+            catch (Exception ex)
+            {
+                ex.Message.WriteMessage(MessageType.Error);
+                return null;
+            }
         }
     }
 
-    private void MergeDictionaries(Dictionary<string, object> defaultParams, Dictionary<string, object> additionalParams)
+    private static void MergeDictionaries(Dictionary<string, object> defaultParams, Dictionary<string, object> additionalParams)
     {
         foreach (KeyValuePair<string, object> item in additionalParams)
         {

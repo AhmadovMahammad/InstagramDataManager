@@ -5,9 +5,8 @@ using DataManager.Helpers.Extensions;
 using DataManager.Helpers.Utilities;
 using DataManager.Models.JsonModels;
 using OpenQA.Selenium;
-using OpenQA.Selenium.Support.UI;
 
-namespace DataManager.Handlers.DisplayHandlers;
+namespace DataManager.Handlers.ManageHandlers;
 public class ManageBlockedProfilesHandler() : BaseCommandHandler
 {
     private const string UnblockXPath = "//button[contains(@class, '_acan') and contains(@class, '_acap')//div[contains(text(), 'Unblock')]";
@@ -41,52 +40,5 @@ public class ManageBlockedProfilesHandler() : BaseCommandHandler
 
         // Build and execute tasks
         var taskBuilder = new SeleniumTaskBuilder(webDriver);
-        BuildUnblockAccountsTask(taskBuilder, data).ExecuteTasks();
-    }
-
-    private ITaskBuilder BuildUnblockAccountsTask(SeleniumTaskBuilder taskBuilder, IEnumerable<RelationshipData> data)
-    {
-        foreach (var relationship in data)
-        {
-            taskBuilder.PerformAction(driver => HandleBlockedAccount(driver, relationship));
-        }
-
-        return taskBuilder;
-    }
-
-    private void HandleBlockedAccount(IWebDriver webDriver, RelationshipData relationship)
-    {
-        var stringListData = relationship.StringListData.FirstOrDefault(data => !string.IsNullOrWhiteSpace(data?.Href));
-        if (stringListData == null)
-        {
-            $"Skipping profile '{relationship.Title}' due to missing or invalid link.".WriteMessage(MessageType.Warning);
-            return;
-        }
-
-        try
-        {
-            webDriver.Navigate().GoToUrl(stringListData.Href);
-            WebDriverExtension.EnsureDomLoaded(webDriver);
-
-            var unblockButton = FindUnblockButton(webDriver);
-            if (unblockButton != null)
-            {
-                unblockButton.Click();
-                $"Profile '{relationship.Title}' has been successfully unblocked.".WriteMessage(MessageType.Success);
-            }
-            else
-            {
-                $"No unblock button found for profile '{relationship.Title}'.".WriteMessage(MessageType.Warning);
-            }
-        }
-        catch (Exception ex)
-        {
-            $"An error occurred while processing profile '{relationship.Title}': {ex.Message}".WriteMessage(MessageType.Error);
-        }
-    }
-
-    private IWebElement? FindUnblockButton(IWebDriver webDriver)
-    {
-        return null;
     }
 }

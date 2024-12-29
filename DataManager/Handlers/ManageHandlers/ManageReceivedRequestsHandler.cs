@@ -6,7 +6,7 @@ using DataManager.Helpers.Utilities;
 using DataManager.Models.JsonModels;
 using OpenQA.Selenium;
 
-namespace DataManager.Handlers.DisplayHandlers;
+namespace DataManager.Handlers.ManageHandlers;
 public class ManageReceivedRequestsHandler() : BaseCommandHandler
 {
     public override OperationType OperationType => OperationType.Hybrid;
@@ -31,7 +31,7 @@ public class ManageReceivedRequestsHandler() : BaseCommandHandler
 
         $"Found {data.Count()} received requests.".WriteMessage(MessageType.Info);
 
-        if (!ConsoleExtension.AskToProceed("\nWould you like to approve these received requests? (y/n)"))
+        if (!"\nWould you like to approve these received requests? (y/n)".AskToProceed())
         {
             "Operation cancelled by user.".WriteMessage(MessageType.Info);
             return;
@@ -39,56 +39,5 @@ public class ManageReceivedRequestsHandler() : BaseCommandHandler
 
         // Build and execute the task
         var taskBuilder = new SeleniumTaskBuilder(webDriver);
-        BuildApproveReceivedRequestsTask(taskBuilder, data).ExecuteTasks();
-    }
-
-    private ITaskBuilder BuildApproveReceivedRequestsTask(SeleniumTaskBuilder taskBuilder, IEnumerable<RelationshipData> data)
-    {
-        return taskBuilder.PerformAction((d) =>
-        {
-            HandleReceivedRequest(d, data);
-        });
-    }
-
-    private void HandleReceivedRequest(IWebDriver webDriver, IEnumerable<RelationshipData> data)
-    {
-        foreach (var relationship in data)
-        {
-            StringListData? stringListData = relationship.StringListData.FirstOrDefault();
-            if (stringListData != null)
-            {
-                if (string.IsNullOrWhiteSpace(stringListData.Href))
-                {
-                    $"Skipping entry with missing Href: {relationship.Title}".WriteMessage(MessageType.Warning);
-                    continue;
-                }
-
-                try
-                {
-                    webDriver.Navigate().GoToUrl(stringListData.Href);
-                    WebDriverExtension.EnsureDomLoaded(webDriver);
-
-                    IWebElement? approveButton = FindApproveButton(webDriver);
-                    if (approveButton != null)
-                    {
-                        approveButton.Click();
-                        $"Successfully approved received request for: {relationship.Title}".WriteMessage(MessageType.Success);
-                    }
-                    else
-                    {
-                        $"Approve button not found for: {relationship.Title}".WriteMessage(MessageType.Warning);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    $"Error processing {relationship.Title}: {ex.Message}".WriteMessage(MessageType.Error);
-                }
-            }
-        }
-    }
-
-    private IWebElement? FindApproveButton(IWebDriver webDriver)
-    {
-        return null;
     }
 }

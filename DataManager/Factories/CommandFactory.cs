@@ -1,6 +1,6 @@
 ﻿using DataManager.Constants.Enums;
 using DataManager.Handlers;
-using DataManager.Handlers.DisplayHandlers;
+using DataManager.Handlers.ManageHandlers;
 using OpenQA.Selenium;
 
 namespace DataManager.Factories;

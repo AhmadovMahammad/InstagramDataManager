@@ -7,16 +7,10 @@ using DataManager.Models;
 using OpenQA.Selenium;
 
 namespace DataManager.Core;
-public class ApplicationRunner
+public class ApplicationRunner(ICommandHandler handler)
 {
-    private readonly ICommandHandler _handler;
-    private readonly IEnumerable<MenuModel> _availableOperations;
-
-    public ApplicationRunner(ICommandHandler handler)
-    {
-        _handler = handler ?? throw new ArgumentNullException(nameof(handler));
-        _availableOperations = AppConstant.GetAvailableOperations();
-    }
+    private readonly ICommandHandler _handler = handler ?? throw new ArgumentNullException(nameof(handler));
+    private readonly IEnumerable<MenuModel> _availableOperations = AppConstant.GetAvailableOperations();
 
     public void Run()
     {
@@ -32,22 +26,31 @@ public class ApplicationRunner
                 break;
             }
 
-            (loginSuccessful, webDriver) = TryStartDriver();
-            if (loginSuccessful && webDriver != null)
+            try
             {
-                HandleCommands(webDriver);
+                (loginSuccessful, webDriver) = TryStartDriver();
+                if (loginSuccessful && webDriver != null)
+                {
+                    HandleCommands(webDriver);
+                }
+                else
+                {
+                    webDriver?.Quit();
+                    if (!ConsoleExtension.AskToProceed("Login failed. Would you like to try again? (y/n)"))
+                    {
+                        break;
+                    }
+                }
             }
-            else
+            catch (Exception ex)
+            {
+                ex.LogException("An unexpected error occurred in the main Run loop.");
+                break;
+            }
+            finally
             {
                 webDriver?.Quit();
-                if (!ConsoleExtension.AskToProceed("Login failed. Would you like to try again? (y/n)"))
-                {
-                    break;
-                }
-                
-                Console.WriteLine("\n");
             }
-
         } while (!loginSuccessful && webDriver != null);
     }
 
@@ -63,8 +66,8 @@ public class ApplicationRunner
         }
         catch (Exception ex)
         {
-            ex.Message.WriteMessage(MessageType.Error);
-            return (false, automation.Driver);
+            ex.LogException("Error during login execution.");
+            return (false, automation?.Driver);
         }
     }
 
@@ -90,9 +93,13 @@ public class ApplicationRunner
                 {
                     _handler.Handle((CommandType)commandId, webDriver);
                 }
+                catch (InvalidOperationException ex)
+                {
+                    ex.LogException("An error occurred while processing the command. Please try again.");
+                }
                 catch (Exception ex)
                 {
-                    ex.Message.WriteMessage(MessageType.Error);
+                    ex.LogException("A critical error occurred. Contact support if the issue persists.");
                 }
             }
             else

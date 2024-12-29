@@ -13,12 +13,12 @@ public static partial class ConsoleExtension
     private const int SW_MAXIMIZE = 3;
 
     private static readonly Dictionary<MessageType, ConsoleColor> MessageTypeColors = new()
-        {
-            { MessageType.Success, ConsoleColor.Green },
-            { MessageType.Error, ConsoleColor.DarkRed },
-            { MessageType.Info, ConsoleColor.Blue },
-            { MessageType.Warning, ConsoleColor.Yellow },
-        };
+    {
+        { MessageType.Success, ConsoleColor.Green },
+        { MessageType.Error, ConsoleColor.DarkRed },
+        { MessageType.Info, ConsoleColor.Blue },
+        { MessageType.Warning, ConsoleColor.Yellow },
+    };
 
     public static void WriteMessage(this string message, MessageType messageType)
     {
@@ -61,5 +61,10 @@ public static partial class ConsoleExtension
 
         string? userInput = Console.ReadLine()?.ToLower();
         return userInput == "y";
+    }
+
+    public static void LogException(this Exception exception, string message)
+    {
+        $"{message} Details: {exception.Message}".WriteMessage(MessageType.Error);
     }
 }

@@ -1,5 +1,4 @@
 ﻿using DataManager.DesignPatterns.ChainOfResponsibility;
-using DataManager.Exceptions;
 using OpenQA.Selenium;
 
 namespace DataManager.Automation.Selenium;
@@ -27,9 +26,9 @@ public abstract class LoginAutomation
             HandleLoginOutcome();
             SaveInfo();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            throw new LoginException($"An error occurred. {ex.Message}");
+            throw;
         }
     }
 

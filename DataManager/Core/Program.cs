@@ -1,7 +1,6 @@
 ﻿using DataManager.Helpers.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System.Runtime.InteropServices;
 
 namespace DataManager.Core;
 internal class Program

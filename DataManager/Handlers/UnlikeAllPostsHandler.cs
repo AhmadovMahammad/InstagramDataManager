@@ -12,7 +12,6 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
     private const string OperationPath = "https://www.instagram.com/your_activity/interactions/likes/";
     private const string ImageXPath = "//img[@data-bloks-name='bk.components.Image']";
     private const string UnlikeButtonXPath = "//*[name()='svg' and @role='img' and (@aria-label='Unlike' or @aria-label='Like') and (contains(@class, 'xyb1xck') or contains(@class, 'xxk16z8'))]";
-    private const string ErrorTextXPath = "//span[contains(text(),'Something went wrong')]";
 
     private int _unlikedCount;
     private readonly Dictionary<string, int> _visitedPosts = [];
@@ -77,39 +76,53 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
         }
         else
         {
-            webElement = webDriver.FindElement(by);
+            webElement = FindElementWithRetries(webDriver, "Liked Post", by, 3, 1500)!;
         }
 
-        string? src = webElement.GetDomAttribute("src");
+        string? src = GetBaseUrl(webElement.GetDomAttribute("src"));
         if (AddToVisitedPosts(src))
         {
             ScrollToElement(webDriver, webElement);
             OpenAndUnlikePost(webDriver, webElement, src);
+
+            return true;
         }
 
-        return true;
+        return false;
+    }
+
+    private string GetBaseUrl(string url)
+    {
+        Uri uri = new Uri(url);
+        return uri.GetLeftPart(UriPartial.Path);
     }
 
     private bool AddToVisitedPosts(string srcValue)
     {
         try
         {
-            if (_visitedPosts.TryGetValue(srcValue, out int value))
+            if (_visitedPosts.TryGetValue(srcValue, out int retryCount))
             {
-                if (value >= AppConstant.MaxRetryPerPost)
-                    throw new InvalidOperationException($"Post reached max retry limit ({AppConstant.MaxRetryPerPost}).");
+                retryCount++;
+                if (retryCount > AppConstant.MaxRetryPerPost)
+                {
+                    $"Post '{srcValue}' reached max retry limit ({AppConstant.MaxRetryPerPost}). Skipping.".WriteMessage(MessageType.Warning);
+                    return false;
+                }
 
-                _visitedPosts[srcValue] = ++value;
-                $"Post already visited. Retry #{value}.".WriteMessage(MessageType.Warning);
-                return false;
+                _visitedPosts[srcValue] = retryCount;
+                $"Post '{srcValue}' already visited. Retry #{retryCount}.".WriteMessage(MessageType.Warning);
+            }
+            else
+            {
+                _visitedPosts[srcValue] = 1;
             }
 
-            _visitedPosts[srcValue] = 0;
             return true;
         }
         catch (Exception ex)
         {
-            $"Error processing post identifier: {ex.Message}".WriteMessage(MessageType.Warning);
+            ex.LogException($"Error processing post identifier '{srcValue}'");
             return false;
         }
     }
@@ -154,7 +167,7 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
         }
     }
 
-    private IWebElement? FindElementWithRetries(IWebDriver webDriver, string elementName, By by, int retries = 3)
+    private IWebElement? FindElementWithRetries(IWebDriver webDriver, string elementName, By by, int retries = 3, int initialDelay = 1500)
     {
         for (int attempt = 1; attempt <= retries; attempt++)
         {
@@ -164,8 +177,10 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
             }
             catch (NoSuchElementException) when (attempt < retries)
             {
-                $"Retrying to find webElement: '{elementName}', ({attempt}/{retries})...".WriteMessage(MessageType.Warning);
-                Task.Delay(1000).Wait();
+                $"Retrying to find webElement: '{elementName}'. [{attempt}/{retries}]".WriteMessage(MessageType.Warning);
+
+                int currentDelay = initialDelay / attempt;
+                Task.Delay(currentDelay).Wait();
             }
             catch (Exception)
             {

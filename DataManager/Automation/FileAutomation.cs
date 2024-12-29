@@ -1,7 +1,5 @@
 ﻿using DataManager.DesignPatterns.ChainOfResponsibility;
 using DataManager.DesignPatterns.Strategy;
-using Microsoft.Win32;
-using System.IO;
 
 namespace DataManager.Automation;
 public class FileAutomation

@@ -5,9 +5,8 @@ using DataManager.Helpers.Extensions;
 using DataManager.Helpers.Utilities;
 using DataManager.Models.JsonModels;
 using OpenQA.Selenium;
-using OpenQA.Selenium.Support.UI;
 
-namespace DataManager.Handlers.DisplayHandlers;
+namespace DataManager.Handlers.ManageHandlers;
 public class ManageFollowingHandler() : BaseCommandHandler
 {
     public override OperationType OperationType => OperationType.Hybrid;
@@ -40,52 +39,5 @@ public class ManageFollowingHandler() : BaseCommandHandler
 
         // Build and execute the task
         var taskBuilder = new SeleniumTaskBuilder(webDriver);
-        BuildRemoveFromFollowingTask(taskBuilder, data).ExecuteTasks();
-    }
-
-    private ITaskBuilder BuildRemoveFromFollowingTask(SeleniumTaskBuilder taskBuilder, IEnumerable<RelationshipData> data)
-    {
-        foreach (var relationship in data)
-        {
-            taskBuilder.PerformAction(driver => HandleFollowingProfile(driver, relationship));
-        }
-
-        return taskBuilder;
-    }
-
-    private void HandleFollowingProfile(IWebDriver webDriver, RelationshipData relationship)
-    {
-        var stringListData = relationship.StringListData.FirstOrDefault(data => !string.IsNullOrWhiteSpace(data?.Href));
-        if (stringListData == null)
-        {
-            $"Skipping profile '{relationship.Title}' due to missing or invalid link.".WriteMessage(MessageType.Warning);
-            return;
-        }
-
-        try
-        {
-            webDriver.Navigate().GoToUrl(stringListData.Href);
-            WebDriverExtension.EnsureDomLoaded(webDriver);
-
-            var removeButton = FindRemoveFromFollowingButton(webDriver);
-            if (removeButton != null)
-            {
-                removeButton.Click();
-                $"Successfully removed '{relationship.Title}' from following.".WriteMessage(MessageType.Success);
-            }
-            else
-            {
-                $"No 'Remove from Following' button found for profile '{relationship.Title}'.".WriteMessage(MessageType.Warning);
-            }
-        }
-        catch (Exception ex)
-        {
-            $"Error processing '{relationship.Title}': {ex.Message}".WriteMessage(MessageType.Error);
-        }
-    }
-
-    private IWebElement? FindRemoveFromFollowingButton(IWebDriver webDriver)
-    {
-        return null;
     }
 }

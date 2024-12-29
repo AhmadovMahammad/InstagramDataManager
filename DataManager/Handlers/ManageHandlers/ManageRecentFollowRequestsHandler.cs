@@ -6,7 +6,7 @@ using DataManager.Helpers.Utilities;
 using DataManager.Models.JsonModels;
 using OpenQA.Selenium;
 
-namespace DataManager.Handlers.DisplayHandlers;
+namespace DataManager.Handlers.ManageHandlers;
 public class ManageRecentFollowRequestsHandler() : BaseCommandHandler
 {
     private const string UnlikeButtonXPath = "";
@@ -32,60 +32,12 @@ public class ManageRecentFollowRequestsHandler() : BaseCommandHandler
 
         // Display Result
         Console.WriteLine($"Data length: {data.Count()}");
-        if (!ConsoleExtension.AskToProceed("\nWould you like to unfollow these pending requests? (y/n)"))
+        if (!"\nWould you like to unfollow these pending requests? (y/n)".AskToProceed())
         {
             return;
         }
 
         // Build and execute
         var taskBuilder = new SeleniumTaskBuilder(webDriver);
-        BuildUnfollowTasks(taskBuilder, data).ExecuteTasks();
-    }
-
-    private ITaskBuilder BuildUnfollowTasks(ITaskBuilder taskBuilder, IEnumerable<RelationshipData> data)
-    {
-        return taskBuilder.PerformAction((d) => HandleAllPendingRequests(d, data));
-    }
-
-    private void HandleAllPendingRequests(IWebDriver webDriver, IEnumerable<RelationshipData> data)
-    {
-        foreach (var relationship in data)
-        {
-            StringListData? stringListData = relationship.StringListData.FirstOrDefault();
-            if (stringListData != null)
-            {
-                if (string.IsNullOrWhiteSpace(stringListData.Href))
-                {
-                    $"Skipping entry with missing Href: {relationship.Title}".WriteMessage(MessageType.Warning);
-                    continue;
-                }
-
-                try
-                {
-                    webDriver.Navigate().GoToUrl(stringListData.Href);
-                    WebDriverExtension.EnsureDomLoaded(webDriver);
-
-                    IWebElement? unfollowButton = FindUnfollowButton(webDriver);
-                    if (unfollowButton != null)
-                    {
-                        unfollowButton.Click();
-                        "Successfully unfollowed: {relationship.Title}".WriteMessage(MessageType.Success);
-                    }
-                    else
-                    {
-                        $"Unfollow button not found for: {relationship.Title}".WriteMessage(MessageType.Warning);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    $"Error processing {relationship.Title}: {ex.Message}".WriteMessage(MessageType.Error);
-                }
-            }
-        }
-    }
-
-    private IWebElement? FindUnfollowButton(IWebDriver webDriver)
-    {
-        return null;
     }
 }

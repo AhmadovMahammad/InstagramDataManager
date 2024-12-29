@@ -8,7 +8,7 @@ namespace DataManager.Factories;
 public class FirefoxDriverFactory
 {
     private static IChainHandler _validationChain = null!;
-    private static readonly string _settingsPath = Path.Combine(Environment.CurrentDirectory, "settings.xml");
+    private static readonly string _settingsPath = Path.Combine(Environment.CurrentDirectory, "Config", "settings.xml");
 
     public static IWebDriver CreateDriver(IChainHandler validationChain)
     {
@@ -26,7 +26,7 @@ public class FirefoxDriverFactory
         FirefoxOptions defaultOptions = new FirefoxOptions()
         {
             BinaryLocation = GetFirefoxExecutablePath(),
-            LogLevel = FirefoxDriverLogLevel.Fatal
+            LogLevel = FirefoxDriverLogLevel.Fatal,
         };
 
         // load settings dynamically.
