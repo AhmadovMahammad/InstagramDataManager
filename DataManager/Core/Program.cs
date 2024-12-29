@@ -21,8 +21,6 @@ internal class Program
                 return;
             }
 
-            ConsoleExtension.MaximizeConsoleWindow();
-
             _host = CreateHostBuilder(args).Build();
             RunApplication();
         }

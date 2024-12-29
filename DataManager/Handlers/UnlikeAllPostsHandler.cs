@@ -65,39 +65,6 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
 
     private bool TryProcessNextPost(IWebDriver webDriver)
     {
-        //By by = By.XPath(ImageXPath);
-        //IWebElement webElement = null!;
-
-        //if (_blackList.Count != 0)
-        //{
-        //    int blacklistLength = _blackList.Count;
-
-        //    IEnumerable<IWebElement> elements = webDriver.FindElements(by).Take(blacklistLength + 1);
-        //    webElement = elements.Skip(blacklistLength).First();
-        //}
-        //else
-        //{
-        //    webElement = FindElementWithRetries(webDriver, "Liked Post", by, 3, 1500)!;
-        //}
-
-
-        //string srcValue = webElement.GetDomAttribute("src");
-        //string? url = GetBaseUrl(srcValue);
-
-        //if (string.Equals(url, ErrorRefreshImageSource, StringComparison.OrdinalIgnoreCase))
-        //    return false;
-
-        //if (AddToVisitedPosts(url))
-        //{
-        //    ScrollToElement(webDriver, webElement);
-        //    OpenAndUnlikePost(webDriver, webElement, url);
-
-        //    return true;
-        //}
-
-        //return false;
-
-
         By by = By.XPath(ImageXPath);
         IWebElement webElement;
 
@@ -168,7 +135,7 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
             }
             else
             {
-                _visitedPosts[srcValue] = 1;
+                _visitedPosts[srcValue] = 0;
             }
 
             return true;
@@ -196,6 +163,8 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
             IWebElement? iconElement = FindElementWithRetries(webDriver, "Unlike Button", By.XPath(UnlikeButtonXPath));
             if (iconElement != null)
             {
+                //ConsoleExtension.ClearLine();
+
                 string ariaLabel = iconElement.GetDomAttribute("aria-label");
                 if (ariaLabel == "Unlike")
                 {
@@ -228,7 +197,7 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
             {
                 return webDriver.FindElement(by);
             }
-            catch (NoSuchElementException) when (attempt < retries)
+            catch (NoSuchElementException) when (attempt <= retries)
             {
                 $"Retrying to find webElement: '{elementName}'. [{attempt}/{retries}]".WriteMessage(MessageType.Warning);
 

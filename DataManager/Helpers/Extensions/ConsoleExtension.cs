@@ -1,17 +1,8 @@
 ﻿using DataManager.Constants.Enums;
-using System.Runtime.InteropServices;
 
 namespace DataManager.Helpers.Extensions;
 public static partial class ConsoleExtension
 {
-    [DllImport("kernel32.dll", ExactSpelling = true)]
-    private static extern nint GetConsoleWindow();
-
-    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-    private static extern bool ShowWindow(nint hWnd, int nCmdShow);
-
-    private const int SW_MAXIMIZE = 3;
-
     private static readonly Dictionary<MessageType, ConsoleColor> MessageTypeColors = new()
     {
         { MessageType.Success, ConsoleColor.Green },
@@ -20,23 +11,44 @@ public static partial class ConsoleExtension
         { MessageType.Warning, ConsoleColor.Yellow },
     };
 
-    public static void WriteMessage(this string message, MessageType messageType)
+    public static void WriteMessage(this string message, MessageType messageType, bool addNewLine = true)
     {
         if (MessageTypeColors.TryGetValue(messageType, out var chosenColor))
         {
             Console.ForegroundColor = chosenColor;
         }
 
-        Console.WriteLine(message);
+        Console.Write(message);
+        if (addNewLine) Console.WriteLine();
+
         Console.ResetColor();
     }
 
-    public static void MaximizeConsoleWindow()
+    public static bool AskToProceed(this string message)
     {
-        nint consoleWindow = GetConsoleWindow();
-        if (consoleWindow != nint.Zero)
+        Console.WriteLine(message);
+        Console.Write("> ");
+
+        string? userInput = Console.ReadLine()?.ToLower();
+        return userInput == "y";
+    }
+
+    public static void LogException(this Exception exception, string message)
+    {
+        $"{message} Details: {exception.Message}".WriteMessage(MessageType.Error);
+    }
+
+    public static void ClearLine()
+    {
+        int pos = Console.CursorLeft;
+        if (pos < 0) return;
+
+        while (pos > 0)
         {
-            ShowWindow(consoleWindow, SW_MAXIMIZE);
+            Console.SetCursorPosition(pos - 1, Console.CursorTop);
+            Console.Write(" ");
+            Console.SetCursorPosition(pos - 1, Console.CursorTop);
+            pos--;
         }
     }
 
@@ -52,19 +64,5 @@ public static partial class ConsoleExtension
                                                                     __/ |              
                                                                    |___/               
                 ");
-    }
-
-    public static bool AskToProceed(this string message)
-    {
-        Console.WriteLine(message);
-        Console.Write("> ");
-
-        string? userInput = Console.ReadLine()?.ToLower();
-        return userInput == "y";
-    }
-
-    public static void LogException(this Exception exception, string message)
-    {
-        $"{message} Details: {exception.Message}".WriteMessage(MessageType.Error);
     }
 }
