@@ -20,19 +20,26 @@ public class SeleniumAutomation : LoginAutomation
 
     protected override void NavigateToLoginPage()
     {
-        Driver.Navigate().GoToUrl("https://www.instagram.com/accounts/login/");
-        "Instagram login page opened successfully!".WriteMessage(MessageType.Success);
+        try
+        {
+            Driver.Navigate().GoToUrl("https://www.instagram.com/accounts/login/");
+            "Instagram login page opened successfully!\n".WriteMessage(MessageType.Success);
+        }
+        catch (Exception ex)
+        {
+            throw new LoginException($"Error navigating to login page: {ex.Message}");
+        }
     }
 
     protected override void PerformLoginSteps()
     {
         try
         {
-            Console.Write("Enter username: ");
+            Console.Write("Enter username > ");
             IWebElement usernameField = Driver.FindElement(By.XPath("//input[@name='username']"));
             SendKeys(usernameField, Console.ReadLine() ?? string.Empty);
 
-            Console.Write("Enter password: ");
+            Console.Write("Enter password > ");
             IWebElement passwordField = Driver.FindElement(By.XPath("//input[@name='password']"));
             SendKeys(passwordField, PasswordExtension.ReadPassword() ?? string.Empty);
 
@@ -53,9 +60,11 @@ public class SeleniumAutomation : LoginAutomation
             // Wait until any of the conditions are met: error banner, 2FA prompt, or 'onetap' URL
             wait.Until(webDriver => IsLoginSuccessfulOrError(webDriver));
 
+            // Check for errors or handle 2FA if needed
             HandleLoginError();
             HandleTwoFactorAuthenticationIfNeeded();
-            "You successfully logged in.".WriteMessage(MessageType.Success);
+
+            "You successfully logged in.\n".WriteMessage(MessageType.Success);
         }
         catch (WebDriverTimeoutException)
         {

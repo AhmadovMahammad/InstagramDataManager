@@ -19,13 +19,13 @@ public class ApplicationRunner(ICommandHandler handler)
         bool loginSuccessful;
         IWebDriver? webDriver = null;
 
+        if (!ConsoleExtension.AskToProceed("To perform any operation, you must sign in to your Instagram account.\nDo you want to keep logging into your account? (y/n)"))
+        {
+            return;
+        }
+
         do
         {
-            if (!ConsoleExtension.AskToProceed("To perform any operation, you must sign in to your Instagram account.\nDo you want to keep logging into your account? (y/n)"))
-            {
-                break;
-            }
-
             try
             {
                 (loginSuccessful, webDriver) = TryStartDriver();
@@ -80,8 +80,8 @@ public class ApplicationRunner(ICommandHandler handler)
 
             Console.WriteLine("\nCommand (Enter a number for command or type 'exit' to quit)");
             Console.Write("> ");
-
             input = Console.ReadLine()?.ToLower();
+
             if (string.Equals(input, "exit", StringComparison.OrdinalIgnoreCase))
             {
                 break;
@@ -93,10 +93,6 @@ public class ApplicationRunner(ICommandHandler handler)
                 {
                     _handler.Handle((CommandType)commandId, webDriver);
                 }
-                catch (InvalidOperationException ex)
-                {
-                    ex.LogException("An error occurred while processing the command. Please try again.");
-                }
                 catch (Exception ex)
                 {
                     ex.LogException("A critical error occurred. Contact support if the issue persists.");
@@ -106,6 +102,8 @@ public class ApplicationRunner(ICommandHandler handler)
             {
                 "Invalid command number. Please try again.".WriteMessage(MessageType.Error);
             }
+
+            Console.WriteLine();
         }
     }
 

@@ -10,5 +10,5 @@ public record LoginOutcome
     public string Condition { get; init; } = string.Empty;
     public object? Data { get; init; }
 
-    public static LoginOutcome Empty = new LoginOutcome(string.Empty);
+    public static readonly LoginOutcome Empty = new(string.Empty);
 }

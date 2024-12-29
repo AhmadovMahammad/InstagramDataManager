@@ -12,6 +12,7 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
     private const string OperationPath = "https://www.instagram.com/your_activity/interactions/likes/";
     private const string ImageXPath = "//img[@data-bloks-name='bk.components.Image']";
     private const string UnlikeButtonXPath = "//*[name()='svg' and @role='img' and (@aria-label='Unlike' or @aria-label='Like') and (contains(@class, 'xyb1xck') or contains(@class, 'xxk16z8'))]";
+    private const string ErrorRefreshImageSource = "https://i.instagram.com/static/images/bloks/assets/ig_illustrations/illo_error_refresh-4x-dark.png/02ffe4dfdf20.png";
 
     private int _unlikedCount;
     private readonly Dictionary<string, int> _visitedPosts = [];
@@ -64,31 +65,83 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
 
     private bool TryProcessNextPost(IWebDriver webDriver)
     {
+        //By by = By.XPath(ImageXPath);
+        //IWebElement webElement = null!;
+
+        //if (_blackList.Count != 0)
+        //{
+        //    int blacklistLength = _blackList.Count;
+
+        //    IEnumerable<IWebElement> elements = webDriver.FindElements(by).Take(blacklistLength + 1);
+        //    webElement = elements.Skip(blacklistLength).First();
+        //}
+        //else
+        //{
+        //    webElement = FindElementWithRetries(webDriver, "Liked Post", by, 3, 1500)!;
+        //}
+
+
+        //string srcValue = webElement.GetDomAttribute("src");
+        //string? url = GetBaseUrl(srcValue);
+
+        //if (string.Equals(url, ErrorRefreshImageSource, StringComparison.OrdinalIgnoreCase))
+        //    return false;
+
+        //if (AddToVisitedPosts(url))
+        //{
+        //    ScrollToElement(webDriver, webElement);
+        //    OpenAndUnlikePost(webDriver, webElement, url);
+
+        //    return true;
+        //}
+
+        //return false;
+
+
         By by = By.XPath(ImageXPath);
-        IWebElement webElement = null!;
+        IWebElement webElement;
 
-        if (_blackList.Count != 0)
+        try
         {
-            int blacklistLength = _blackList.Count;
+            if (_blackList.Count != 0)
+            {
+                var elements = webDriver.FindElements(by).Take(_blackList.Count + 1).ToList();
+                if (elements.Count <= _blackList.Count)
+                    return false;
 
-            IEnumerable<IWebElement> elements = webDriver.FindElements(by).Take(blacklistLength + 1);
-            webElement = elements.Skip(blacklistLength).First();
+                webElement = elements[_blackList.Count];
+            }
+            else
+            {
+                webElement = FindElementWithRetries(webDriver, "Liked Post", by, 3, 1500) ??
+                             throw new InvalidOperationException("Failed to find the element after retries.");
+            }
+
+            string srcValue = webElement.GetDomAttribute("src");
+            string? url = GetBaseUrl(srcValue);
+
+            if (string.Equals(url, ErrorRefreshImageSource, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            if (AddToVisitedPosts(url))
+            {
+                ScrollToElement(webDriver, webElement);
+                OpenAndUnlikePost(webDriver, webElement, url);
+                return true;
+            }
+
+            return false;
         }
-        else
+        catch (NoSuchElementException ex)
         {
-            webElement = FindElementWithRetries(webDriver, "Liked Post", by, 3, 1500)!;
+            ex.LogException("Element not found");
+            return false;
         }
-
-        string? src = GetBaseUrl(webElement.GetDomAttribute("src"));
-        if (AddToVisitedPosts(src))
+        catch (Exception ex)
         {
-            ScrollToElement(webDriver, webElement);
-            OpenAndUnlikePost(webDriver, webElement, src);
-
-            return true;
+            ex.LogException("An error occurred while processing the post");
+            return false;
         }
-
-        return false;
     }
 
     private string GetBaseUrl(string url)
