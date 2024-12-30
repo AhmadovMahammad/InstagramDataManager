@@ -80,8 +80,8 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
             }
             else
             {
-                webElement = FindElementWithRetries(webDriver, "Liked Post", by, 3, 1500) ??
-                             throw new InvalidOperationException("Failed to find the element after retries.");
+                webElement = webDriver.FindElementWithRetries("Liked Post", by, 3, 1500) ??
+                    throw new InvalidOperationException("Failed to find the element after retries.");
             }
 
             string srcValue = webElement.GetDomAttribute("src");
@@ -131,7 +131,7 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
                 }
 
                 _visitedPosts[srcValue] = retryCount;
-                $"Post '{srcValue}' already visited. Retry #{retryCount}.".WriteMessage(MessageType.Warning);
+                $"Post '{srcValue}' already visited. Retry #{retryCount}.".WriteMessage(MessageType.Error);
             }
             else
             {
@@ -150,7 +150,7 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
     private void ScrollToElement(IWebDriver webDriver, IWebElement webElement)
     {
         ((IJavaScriptExecutor)webDriver).ExecuteScript("arguments[0].scrollIntoView(true);", webElement);
-        WaitForElementVisible(webDriver, webElement);
+        webDriver.WaitForElementVisible(webElement);
     }
 
     private void OpenAndUnlikePost(IWebDriver webDriver, IWebElement postElement, string src)
@@ -160,7 +160,7 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
             postElement.Click();
             WebDriverExtension.EnsureDomLoaded(webDriver);
 
-            IWebElement? iconElement = FindElementWithRetries(webDriver, "Unlike Button", By.XPath(UnlikeButtonXPath));
+            IWebElement? iconElement = webDriver.FindElementWithRetries("Unlike Button", By.XPath(UnlikeButtonXPath));
             if (iconElement != null)
             {
                 //ConsoleExtension.ClearLine();
@@ -187,36 +187,5 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
             webDriver.Navigate().Back();
             WebDriverExtension.EnsureDomLoaded(webDriver);
         }
-    }
-
-    private IWebElement? FindElementWithRetries(IWebDriver webDriver, string elementName, By by, int retries = 3, int initialDelay = 1500)
-    {
-        for (int attempt = 1; attempt <= retries; attempt++)
-        {
-            try
-            {
-                return webDriver.FindElement(by);
-            }
-            catch (NoSuchElementException) when (attempt <= retries)
-            {
-                $"Retrying to find webElement: '{elementName}'. [{attempt}/{retries}]".WriteMessage(MessageType.Warning);
-
-                int currentDelay = initialDelay / attempt;
-                Task.Delay(currentDelay).Wait();
-            }
-            catch (Exception)
-            {
-                $"Error finding webElement: '{elementName}'".WriteMessage(MessageType.Error);
-                break;
-            }
-        }
-
-        return null;
-    }
-
-    private void WaitForElementVisible(IWebDriver webDriver, IWebElement webElement, int timeoutSeconds = 10)
-    {
-        new WebDriverWait(webDriver, TimeSpan.FromSeconds(timeoutSeconds))
-            .Until(d => webElement.Displayed);
     }
 }

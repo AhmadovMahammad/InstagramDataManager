@@ -10,11 +10,23 @@ public static partial class TableExtension
         params string[] columnNames)
     {
         var table = new ConsoleTable(columnNames);
+        bool isSimpleType = typeof(T).IsPrimitive || typeof(T) == typeof(string);
 
-        foreach (var child in data)
+        if (isSimpleType)
         {
-            PropertyInfo[] properties = child?.GetType().GetProperties() ?? Array.Empty<PropertyInfo>();
-            table.AddRow(properties.Select(prop => prop.GetValue(child)?.ToString()).ToArray());
+            if (columnNames.Length == 2 && data.Count() == 2)
+            {
+                var countData = data.ToArray();
+                table.AddRow(countData.Select(num => num?.ToString()).ToArray());
+            }
+        }
+        else
+        {
+            foreach (var child in data)
+            {
+                PropertyInfo[] properties = child?.GetType().GetProperties() ?? Array.Empty<PropertyInfo>();
+                table.AddRow(properties.Select(prop => prop.GetValue(child)?.ToString()).ToArray());
+            }
         }
 
         configureTable?.Invoke(table);

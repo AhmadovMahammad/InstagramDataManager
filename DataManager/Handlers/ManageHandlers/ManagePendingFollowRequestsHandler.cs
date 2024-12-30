@@ -1,4 +1,5 @@
-﻿using DataManager.Constants.Enums;
+﻿using ConsoleTables;
+using DataManager.Constants.Enums;
 using DataManager.DesignPatterns.Builder;
 using DataManager.DesignPatterns.Strategy;
 using DataManager.Helpers.Extensions;
@@ -9,6 +10,12 @@ using OpenQA.Selenium;
 namespace DataManager.Handlers.ManageHandlers;
 public class ManagePendingFollowRequestsHandler() : BaseCommandHandler
 {
+    private const string PendingButtonXPath = "//button[contains(@class,'_acan') and ..//div[text()='Pending']]";
+    private const string UnfollowButtonXPath = "//button[contains(@class, '_a9-- _ap36 _a9-_') and normalize-space(text())='Unfollow']";
+
+    private int _unfollowedCount = 0;
+    private int _notUnfollowedCount = 0;
+
     public override OperationType OperationType => OperationType.Hybrid;
 
     protected override void Execute(Dictionary<string, object> parameters)
@@ -17,8 +24,7 @@ public class ManagePendingFollowRequestsHandler() : BaseCommandHandler
         IFileFormatStrategy strategy = parameters.Parse<IFileFormatStrategy>("FileFormatStrategy");
         IWebDriver webDriver = parameters.Parse<IWebDriver>("WebDriver");
 
-        // Process the file data and manage the pending follow requests
-        ManageData(strategy.ProcessFile(filePath, "relationships_pending_follow_requests"), webDriver);
+        ManageData(strategy.ProcessFile(filePath, "relationships_follow_requests_sent"), webDriver);
     }
 
     private void ManageData(IEnumerable<RelationshipData> data, IWebDriver webDriver)
@@ -29,15 +35,85 @@ public class ManagePendingFollowRequestsHandler() : BaseCommandHandler
             return;
         }
 
-        $"Found {data.Count()} pending follow requests.".WriteMessage(MessageType.Info);
-
-        if (!"\nWould you like to approve these pending follow requests? (y/n)".AskToProceed())
+        // Display the total number of pending requests
+        Console.WriteLine($"[{DateTime.Now}] Total sent follow requests found: {data.Count()}");
+        if (!"\nWould you like to decline or return these pending requests? (y/n)".AskToProceed())
         {
-            "Operation cancelled by user.".WriteMessage(MessageType.Info);
+            Console.WriteLine($"Operation canceled by the user.");
             return;
         }
 
-        // Build and execute the task
+        // Build and execute
         var taskBuilder = new SeleniumTaskBuilder(webDriver);
+        taskBuilder
+            .PerformAction((IWebDriver webDriver) => HandleAllPendingRequests(webDriver, data))
+            .ExecuteTasks();
+    }
+
+    private void HandleAllPendingRequests(IWebDriver webDriver, IEnumerable<RelationshipData> data)
+    {
+        "Starting the process of declining requests...\n".WriteMessage(MessageType.Info);
+        WebDriverExtension.EnsureDomLoaded(webDriver);
+
+        var stringListData = data.SelectMany(relationshipData => relationshipData.StringListData);
+        foreach (var childData in stringListData)
+        {
+            Console.WriteLine($"Navigating to profile > {childData.Value}");
+
+            if (!TryProcessNextRequest(webDriver, childData.Href))
+            {
+                $"Unable to decline the sent request for {childData.Value}. It seems this request is no longer pending or was not accepted.".WriteMessage(MessageType.Warning);
+                _notUnfollowedCount++;
+            }
+            else
+            {
+                _unfollowedCount++;
+            }
+
+            Console.WriteLine("\n");
+        }
+
+        "All possible requests were handled successfully.".WriteMessage(MessageType.Success);
+        TableExtension.DisplayAsTable([_unfollowedCount, _notUnfollowedCount], (ConsoleTable consoleTable) =>
+        {
+            consoleTable.Options.EnableCount = false;
+        }, "Unfollowed Count", "Declined Count");
+    }
+
+    private bool TryProcessNextRequest(IWebDriver webDriver, string href)
+    {
+        try
+        {
+            webDriver.Navigate().GoToUrl(href);
+            WebDriverExtension.EnsureDomLoaded(webDriver);
+
+            By pendingBy = By.XPath(PendingButtonXPath);
+            IWebElement? pendingButton = webDriver.FindElementWithRetries("Requested Button", pendingBy, 1, 1000);
+
+            if (pendingButton == null)
+            {
+                return false;
+            }
+
+            pendingButton.Click();
+
+            By unfollowBy = By.XPath(UnfollowButtonXPath);
+            IWebElement? unfollowButton = webDriver.FindElementWithRetries("Unfollow Button", unfollowBy, 2, 1000);
+
+            if (unfollowButton == null)
+            {
+                $"'Unfollow' button not found on the page.".WriteMessage(MessageType.Error);
+                return false;
+            }
+
+            unfollowButton.Click();
+
+            $"Successfully unfollowed the request for the user.".WriteMessage(MessageType.Success);
+            return true;
+        }
+        catch (Exception)
+        {
+            throw;
+        }
     }
 }

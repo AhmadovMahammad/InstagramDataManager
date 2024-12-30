@@ -30,7 +30,7 @@ public static partial class ConsoleExtension
         Console.Write("> ");
 
         string? userInput = Console.ReadLine()?.ToLower();
-        return userInput == "y";
+        return string.Equals(userInput, "y", StringComparison.OrdinalIgnoreCase);
     }
 
     public static void LogException(this Exception exception, string message)

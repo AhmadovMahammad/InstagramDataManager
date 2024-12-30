@@ -45,7 +45,7 @@ public abstract class BaseCommandHandler : ICommandHandler
         catch (Exception ex)
         {
             ex.LogException("Unexpected error during command execution.");
-            throw new InvalidOperationException("An error occurred during the operation execution.", ex);
+            throw;
         }
     }
 

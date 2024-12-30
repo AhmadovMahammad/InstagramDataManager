@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <firefoxOptions>
-	<headless>false</headless>
+	<headless>true</headless>
 	<disableBotDetection>true</disableBotDetection>
 </firefoxOptions>
