@@ -18,9 +18,6 @@ public enum CommandType
     [Description("Manage your followers.")]
     Manage_Followers,
 
-    [Description("Manage profiles you're following.")]
-    Manage_Following,
-
     [Description("Manage recently unfollowed users.")]
     Manage_Recently_Unfollowed,
 
