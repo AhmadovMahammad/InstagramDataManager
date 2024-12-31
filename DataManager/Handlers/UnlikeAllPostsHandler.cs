@@ -4,7 +4,6 @@ using DataManager.DesignPatterns.Builder;
 using DataManager.Helpers.Extensions;
 using DataManager.Helpers.Utilities;
 using OpenQA.Selenium;
-using OpenQA.Selenium.Support.UI;
 
 namespace DataManager.Handlers;
 public class UnlikeAllPostsHandler : BaseCommandHandler
@@ -25,14 +24,10 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
         IWebDriver webDriver = parameters.Parse<IWebDriver>("WebDriver");
 
         var taskBuilder = new SeleniumTaskBuilder(webDriver);
-        BuildUnlikePostTask(taskBuilder).ExecuteTasks();
-    }
-
-    private ITaskBuilder BuildUnlikePostTask(ITaskBuilder builder)
-    {
-        return builder
+        taskBuilder
             .NavigateTo(OperationPath)
-            .PerformAction(HandleAllPosts);
+            .PerformAction(HandleAllPosts)
+            .ExecuteTasks();
     }
 
     private void HandleAllPosts(IWebDriver webDriver)

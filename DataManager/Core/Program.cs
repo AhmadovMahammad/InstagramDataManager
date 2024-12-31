@@ -9,10 +9,10 @@ internal class Program
 
     private static void Main(string[] args)
     {
+        using Mutex mutex = new Mutex(true, @"Global\InstagramDataManager");
+
         try
         {
-            using Mutex mutex = new Mutex(true, @"Global\InstagramDataManager");
-
             // Try to acquire the mutex for up to 3 seconds.
             if (!mutex.WaitOne(TimeSpan.FromSeconds(3)))
             {
@@ -29,6 +29,10 @@ internal class Program
             Console.WriteLine($"An error occurred: {ex.Message}");
             Console.WriteLine("Press any key to exit...");
             Console.ReadKey();
+        }
+        finally
+        {
+            mutex.ReleaseMutex();
         }
     }
 
