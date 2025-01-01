@@ -7,6 +7,7 @@ using DataManager.Models.JsonModels;
 using OpenQA.Selenium;
 
 namespace DataManager.Handlers.ManageHandlers;
+
 public class ManageRecentlyUnfollowedHandler() : BaseCommandHandler
 {
     public override OperationType OperationType => OperationType.Hybrid;
@@ -17,7 +18,7 @@ public class ManageRecentlyUnfollowedHandler() : BaseCommandHandler
         IFileFormatStrategy strategy = parameters.Parse<IFileFormatStrategy>("FileFormatStrategy");
         IWebDriver webDriver = parameters.Parse<IWebDriver>("WebDriver");
 
-        ManageData(strategy.ProcessFile(filePath, "relationships_permanent_follow_requests"), webDriver);
+        ManageData(strategy.ProcessFile(filePath, "relationships_unfollowed_users"), webDriver);
     }
 
     private void ManageData(IEnumerable<RelationshipData> data, IWebDriver webDriver)
@@ -28,13 +29,23 @@ public class ManageRecentlyUnfollowedHandler() : BaseCommandHandler
             return;
         }
 
-        Console.WriteLine($"only '{data.Count()}' data was found.");
-        if (!"\nWould you like to remove these people from close friends? (y/n)".AskToProceed())
+        // Display Result
+        Console.WriteLine($"[{DateTime.Now}] Total recently unfollowed profiled found: {data.Count()}");
+        if (!"\nWould you prefer a table-format display of recently unfollowed followers? (y/n)".AskToProceed())
         {
+            Console.WriteLine($"Operation canceled by the user.");
             return;
         }
 
-        // Build and execute 
-        var taskBuilder = new SeleniumTaskBuilder(webDriver);
+        IEnumerable<StringListData> stringListData = data.SelectMany(rd => rd.StringListData);
+        stringListData.Select(listData =>
+        {
+            DateTime dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+            return new
+            {
+                Username = listData.Value,
+                Date = dateTime.AddSeconds(listData.Timestamp).ToLongDateString(),
+            };
+        }).DisplayAsTable(null, "Username", "Unfollow Date");
     }
 }
