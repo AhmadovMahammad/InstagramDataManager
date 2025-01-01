@@ -10,7 +10,8 @@ The tool supports persistent login. Users only need to log in once during the pr
 ## Supported Operations
 The tool supports the following operations:
 
-![image](https://github.com/user-attachments/assets/ba6b5c91-7ba3-47e3-bcd4-ac510a506949)
+![image](https://github.com/user-attachments/assets/494434af-11b5-4f30-a48b-61fca1f5a02f)
+
 
 ## Browser Support for Selenium-based Operations
 
