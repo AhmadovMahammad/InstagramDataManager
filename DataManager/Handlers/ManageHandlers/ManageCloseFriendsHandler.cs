@@ -30,7 +30,7 @@ public class ManageCloseFriendsHandler() : BaseCommandHandler
 
         $"{data.Count()} entries found for processing.".WriteMessage(MessageType.Info);
 
-        if (!ConsoleExtension.AskToProceed("Do you want to remove the listed profiles from close friends? (y/n)"))
+        if (!"Do you want to remove the listed profiles from close friends? (y/n)".AskToProceed())
         {
             "Operation cancelled by user.".WriteMessage(MessageType.Info);
             return;

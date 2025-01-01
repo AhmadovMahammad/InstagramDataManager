@@ -9,7 +9,6 @@ public static class AppConstant
     public static readonly TimeSpan ImplicitWait = TimeSpan.FromSeconds(10);
     public static readonly TimeSpan ExplicitWait = TimeSpan.FromSeconds(15);
     public static readonly int MaxRetryPerPost = 3;
-    public static readonly int MaxPostStack = 5;
 
     public static IEnumerable<MenuModel> GetAvailableOperations()
     {

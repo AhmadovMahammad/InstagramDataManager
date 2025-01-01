@@ -19,7 +19,7 @@ public class ApplicationRunner(ICommandHandler handler)
         bool loginSuccessful;
         IWebDriver? webDriver = null;
 
-        if (!ConsoleExtension.AskToProceed("To perform any operation, you must sign in to your Instagram account.\nDo you want to keep logging into your account? (y/n)"))
+        if (!"To perform any operation, you must sign in to your Instagram account.\nDo you want to keep logging into your account? (y/n)".AskToProceed())
         {
             return;
         }
@@ -36,7 +36,7 @@ public class ApplicationRunner(ICommandHandler handler)
                 else
                 {
                     webDriver?.Quit();
-                    if (!ConsoleExtension.AskToProceed("Login failed. Would you like to try again? (y/n)"))
+                    if (!"Login failed. Would you like to try again? (y/n)".AskToProceed())
                     {
                         break;
                     }

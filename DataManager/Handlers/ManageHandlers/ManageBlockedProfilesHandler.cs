@@ -32,7 +32,7 @@ public class ManageBlockedProfilesHandler() : BaseCommandHandler
 
         $"{data.Count()} entries found for processing.".WriteMessage(MessageType.Info);
 
-        if (!ConsoleExtension.AskToProceed("Do you want to unblock the listed profiles? (y/n)"))
+        if (!"Do you want to unblock the listed profiles? (y/n)".AskToProceed())
         {
             "Operation cancelled by user.".WriteMessage(MessageType.Info);
             return;

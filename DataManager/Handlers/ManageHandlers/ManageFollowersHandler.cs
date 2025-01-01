@@ -30,7 +30,7 @@ public class ManageFollowersHandler() : BaseCommandHandler
 
         $"{data.Count()} entries found for processing.".WriteMessage(MessageType.Info);
 
-        if (!ConsoleExtension.AskToProceed("Do you want to remove the listed profiles from followers? (y/n)"))
+        if (!"Do you want to remove the listed profiles from followers? (y/n)".AskToProceed())
         {
             "Operation cancelled by user.".WriteMessage(MessageType.Info);
             return;

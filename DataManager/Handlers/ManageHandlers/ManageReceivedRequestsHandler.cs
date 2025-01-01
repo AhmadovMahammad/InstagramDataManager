@@ -2,6 +2,7 @@
 using DataManager.Helpers.Extensions;
 using DataManager.Helpers.Utilities;
 using OpenQA.Selenium;
+using System.Collections.ObjectModel;
 
 namespace DataManager.Handlers.ManageHandlers
 {
@@ -37,7 +38,7 @@ namespace DataManager.Handlers.ManageHandlers
 
         private void PerformActionOnRequests(IWebDriver webDriver, Action<IWebDriver> action)
         {
-            Console.WriteLine("Starting the process of managing received requests...");
+            "Starting the process of managing received requests...\n".WriteMessage(MessageType.Info);
             WebDriverExtension.EnsureDomLoaded(webDriver);
 
             try
@@ -67,8 +68,7 @@ namespace DataManager.Handlers.ManageHandlers
 
         private void ConfirmAllReceivedRequests(IWebDriver webDriver)
         {
-            Console.WriteLine("Confirming all received requests...");
-            var confirmButtons = webDriver.FindElements(By.XPath("//div[contains(text(), 'Confirm')]"));
+            ReadOnlyCollection<IWebElement> confirmButtons = webDriver.FindElements(By.XPath("//div[contains(text(), 'Confirm')]"));
 
             if (confirmButtons.Count == 0)
             {
@@ -94,8 +94,7 @@ namespace DataManager.Handlers.ManageHandlers
 
         private void DeleteAllReceivedRequests(IWebDriver webDriver)
         {
-            Console.WriteLine("Deleting all received requests...");
-            var deleteButtons = webDriver.FindElements(By.XPath("//div[contains(text(), 'Delete')]"));
+            ReadOnlyCollection<IWebElement> deleteButtons = webDriver.FindElements(By.XPath("//div[contains(text(), 'Delete')]"));
 
             if (deleteButtons.Count == 0)
             {
@@ -109,6 +108,7 @@ namespace DataManager.Handlers.ManageHandlers
                 {
                     IWebElement deleteButton = deleteButtons[i];
                     deleteButton.Click();
+
                     $"Request #{i + 1} deleted.".WriteMessage(MessageType.Success);
                 }
                 catch (Exception ex)
