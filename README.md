@@ -63,3 +63,6 @@ After entering the file path, the operation will proceed and the relevant data w
 ## Contributing
 
 Contributions are welcome! If you have an idea for a new feature, bug fix, or improvement, feel free to fork the repository and submit a pull request.
+
+## Support
+If you find this tool helpful, you can support its development by buying me a coffee: [buymeacoffee.com](https://www.buymeacoffee.com/ahmadovmahammad)
