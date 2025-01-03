@@ -14,7 +14,7 @@ public class CommandHandler : ICommandHandler // Routes command-line inputs to t
     private readonly Dictionary<CommandType, Action> _defaultActions = new()
     {
         {
-            CommandType.ClearConsole,
+            CommandType.Clear_Console,
             () =>
             {
                 Console.Clear();
@@ -22,7 +22,7 @@ public class CommandHandler : ICommandHandler // Routes command-line inputs to t
             }
         },
         {
-            CommandType.GetInfo,
+            CommandType.Get_Info,
             () =>
             {
                 Console.WriteLine("\nTo retrieve your Instagram information (JSON or HTML files):");
