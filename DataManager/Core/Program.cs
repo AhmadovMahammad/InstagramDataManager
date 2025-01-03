@@ -1,5 +1,4 @@
-﻿using DataManager.Helpers.Extensions;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace DataManager.Core;

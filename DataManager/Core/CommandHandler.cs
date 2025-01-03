@@ -1,6 +1,6 @@
-﻿using DataManager.Constants.Enums;
-using DataManager.Factories;
-using DataManager.Helpers.Extensions;
+﻿using DataManager.Constant.Enums;
+using DataManager.Factory;
+using DataManager.Helper.Extension;
 using OpenQA.Selenium;
 
 namespace DataManager.Core;

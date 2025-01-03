@@ -1,9 +1,9 @@
 ﻿using ConsoleTables;
-using DataManager.Automation.Selenium;
-using DataManager.Constants;
-using DataManager.Constants.Enums;
-using DataManager.Helpers.Extensions;
-using DataManager.Models;
+using DataManager.Automation;
+using DataManager.Constant;
+using DataManager.Constant.Enums;
+using DataManager.Helper.Extension;
+using DataManager.Model;
 using OpenQA.Selenium;
 
 namespace DataManager.Core;
