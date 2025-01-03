@@ -28,8 +28,8 @@ public enum CommandType
     Unlike_All_Posts,
 
     [Description("Provides instructions on how to get JSON or HTML files from Instagram.")]
-    GetInfo,
+    Get_Info,
 
     [Description("Makes extra room for the user by clearing the console.")]
-    ClearConsole
+    Clear_Console
 }
