@@ -10,7 +10,8 @@ The tool supports persistent login. Users only need to log in once during the pr
 ## Supported Operations
 The tool supports the following operations:
 
-![image](https://github.com/user-attachments/assets/ba6b5c91-7ba3-47e3-bcd4-ac510a506949)
+![image](https://github.com/user-attachments/assets/494434af-11b5-4f30-a48b-61fca1f5a02f)
+
 
 ## Browser Support for Selenium-based Operations
 
@@ -62,3 +63,6 @@ After entering the file path, the operation will proceed and the relevant data w
 ## Contributing
 
 Contributions are welcome! If you have an idea for a new feature, bug fix, or improvement, feel free to fork the repository and submit a pull request.
+
+## Support
+If you find this tool helpful, you can support its development by buying me a coffee: [buymeacoffee.com](https://www.buymeacoffee.com/ahmadovmahammad)
