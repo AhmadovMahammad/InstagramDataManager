@@ -4,6 +4,7 @@ using DataManager.DesignPattern.Builder;
 using DataManager.Helper.Extension;
 using DataManager.Helper.Utility;
 using OpenQA.Selenium;
+using OpenQA.Selenium.Internal;
 
 namespace DataManager.Handler;
 public class UnlikeAllPostsHandler : BaseCommandHandler
@@ -80,10 +81,12 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
             }
 
             string srcValue = webElement.GetDomAttribute("src");
-            string? url = GetBaseUrl(srcValue);
+            string url = GetBaseUrl(srcValue);
 
             if (string.Equals(url, ErrorRefreshImageSource, StringComparison.OrdinalIgnoreCase))
+            {
                 return false;
+            }
 
             if (AddToVisitedPosts(url))
             {
@@ -124,13 +127,11 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
                     $"Post '{srcValue}' reached max retry limit ({AppConstant.MaxRetryPerPost}). Skipping.".WriteMessage(MessageType.Warning);
                     return false;
                 }
-
-                _visitedPosts[srcValue] = retryCount;
-                $"Post '{srcValue}' already visited. Retry #{retryCount}.".WriteMessage(MessageType.Error);
             }
             else
             {
-                _visitedPosts[srcValue] = 0;
+                _visitedPosts[srcValue] = retryCount;
+                $"Post '{srcValue}' already visited. Retry #{retryCount}.".WriteMessage(MessageType.Error);
             }
 
             return true;
@@ -158,8 +159,6 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
             IWebElement? iconElement = webDriver.FindElementWithRetries("Unlike Button", By.XPath(UnlikeButtonXPath));
             if (iconElement != null)
             {
-                //ConsoleExtension.ClearLine();
-
                 string ariaLabel = iconElement.GetDomAttribute("aria-label");
                 if (ariaLabel == "Unlike")
                 {

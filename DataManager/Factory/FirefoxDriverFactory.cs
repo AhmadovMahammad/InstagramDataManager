@@ -36,7 +36,7 @@ public class FirefoxDriverFactory
         }
 
         XmlReaderSettings xmlReaderSettings = new() { IgnoreWhitespace = true, IgnoreComments = true };
-        using FileStream fileStream = new FileStream(_settingsPath, FileMode.Open);
+        using FileStream fileStream = new FileStream(_settingsPath, FileMode.Open, FileAccess.Read);
         using XmlReader xmlReader = XmlReader.Create(fileStream, xmlReaderSettings);
 
         while (xmlReader.Read())
