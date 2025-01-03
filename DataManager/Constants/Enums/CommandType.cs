@@ -27,6 +27,9 @@ public enum CommandType
     [Description("Unlikes all posts you have liked.")]
     Unlike_All_Posts,
 
+    [Description("Provides instructions on how to get JSON or HTML files from Instagram.")]
+    GetInfo,
+
     [Description("Makes extra room for the user by clearing the console.")]
     ClearConsole
 }

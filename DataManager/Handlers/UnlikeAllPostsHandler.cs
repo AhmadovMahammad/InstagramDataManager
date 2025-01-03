@@ -108,8 +108,8 @@ public class UnlikeAllPostsHandler : BaseCommandHandler
 
     private string GetBaseUrl(string url)
     {
-        Uri uri = new Uri(url);
-        return uri.GetLeftPart(UriPartial.Path);
+        int indexOfGid = url.IndexOf("gid");
+        return url[..indexOfGid];
     }
 
     private bool AddToVisitedPosts(string srcValue)
