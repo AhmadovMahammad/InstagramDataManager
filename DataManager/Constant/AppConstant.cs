@@ -6,6 +6,8 @@ using System.Reflection;
 namespace DataManager.Constant;
 public static class AppConstant
 {
+    public static readonly string ApplicationDataFolderPath =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "InstagramDataManager");
     public static readonly TimeSpan ImplicitWait = TimeSpan.FromSeconds(10);
     public static readonly TimeSpan ExplicitWait = TimeSpan.FromSeconds(15);
     public static readonly int MaxRetryPerPost = 3;

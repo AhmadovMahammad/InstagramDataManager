@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using DataManager.Constant;
+using DataManager.Constant.Enums;
+using DataManager.Helper.Extension;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace DataManager.Core;
@@ -21,6 +24,8 @@ internal class Program
             }
 
             _host = CreateHostBuilder(args).Build();
+
+            CreateFolderIfNeeded();
             RunApplication();
         }
         catch (Exception ex)
@@ -32,6 +37,16 @@ internal class Program
         finally
         {
             mutex.ReleaseMutex();
+        }
+    }
+
+    private static void CreateFolderIfNeeded()
+    {
+        string path = AppConstant.ApplicationDataFolderPath;
+        if (!Directory.Exists(path))
+        {
+            Directory.CreateDirectory(path);
+            ConsoleExtension.WriteMessage($"Path will contain several important files: {path}. You can obtain data from there if you need it.", MessageType.Success);
         }
     }
 

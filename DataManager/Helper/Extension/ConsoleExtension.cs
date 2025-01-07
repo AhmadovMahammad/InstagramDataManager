@@ -29,8 +29,8 @@ public static partial class ConsoleExtension
         Console.WriteLine(message);
         Console.Write("> ");
 
-        string userInput = Console.ReadLine()?.ToLower() ?? string.Empty;
-        return string.Equals(userInput.Trim(), "y", StringComparison.OrdinalIgnoreCase);
+        string userInput = Console.ReadLine()?.Trim().ToLower() ?? string.Empty;
+        return string.Equals(userInput, "y", StringComparison.OrdinalIgnoreCase);
     }
 
     public static void LogException(this Exception exception, string message)

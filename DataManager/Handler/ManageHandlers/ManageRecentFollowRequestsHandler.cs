@@ -71,7 +71,7 @@ public class ManageRecentFollowRequestsHandler() : BaseCommandHandler
             }
 
             "All possible requests were handled successfully.".WriteMessage(MessageType.Success);
-            TableExtension.DisplayAsTable([_unfollowedCount, _notAcceptedCount], (ConsoleTable consoleTable) =>
+            new List<int> { _unfollowedCount, _notAcceptedCount }.DisplayAsTable((ConsoleTable consoleTable) =>
             {
                 consoleTable.Options.EnableCount = false;
             }, "Unfollowed Count", "Declined Count");

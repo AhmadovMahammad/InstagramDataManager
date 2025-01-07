@@ -22,7 +22,7 @@ public static class CommandFactory
             CommandType.Manage_Followers => new ManageFollowersHandler(),
             CommandType.Manage_Recently_Unfollowed => new ManageRecentlyUnfollowedHandler(),
             CommandType.Manage_Pending_Follow_Requests => new ManagePendingFollowRequestsHandler(),
-            CommandType.Unlike_All_Posts => new UnlikeAllPostsHandler(),
+            CommandType.Unlike_All_Posts => new UnlikePostsHandler(),
             _ => null
         };
     }

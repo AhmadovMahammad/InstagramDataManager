@@ -14,7 +14,7 @@ public static class WebDriverExtension
         jsExecutor.ExecuteScript("arguments[0].click();", webElement);
     }
 
-    public static IWebElement? FindElementWithRetries(this IWebDriver webDriver, string elementName, By by, int retries = 3, int initialDelay = 1500)
+    public static IWebElement? FindElementWithRetries(this IWebDriver webDriver, string elementName, By by, int retries = 3, int initialDelay = 1500, bool logMessage = true)
     {
         for (int attempt = 1; attempt <= retries; attempt++)
         {
@@ -24,14 +24,16 @@ public static class WebDriverExtension
             }
             catch (NoSuchElementException) when (attempt <= retries)
             {
-                $"Retrying to find webElement: '{elementName}'. [{attempt}/{retries}]".WriteMessage(MessageType.Warning);
+                if (logMessage)
+                    $"Retrying to find webElement: '{elementName}'. [{attempt}/{retries}]".WriteMessage(MessageType.Warning);
 
                 int currentDelay = initialDelay / attempt;
                 Task.Delay(currentDelay).Wait();
             }
             catch (Exception)
             {
-                $"Error finding webElement: '{elementName}'".WriteMessage(MessageType.Error);
+                if (logMessage)
+                    $"Error finding webElement: '{elementName}'".WriteMessage(MessageType.Error);
                 break;
             }
         }
@@ -47,6 +49,18 @@ public static class WebDriverExtension
             string? documentReadyState = ((IJavaScriptExecutor)d).ExecuteScript("return document.readyState").ToString();
             return documentReadyState is not null and "complete";
         });
+    }
+
+    public static void WaitForCondition(this IWebDriver driver, Func<bool> condition, TimeSpan timeout)
+    {
+        var wait = new WebDriverWait(new SystemClock(), driver, timeout, TimeSpan.FromMilliseconds(500));
+        wait.Until(_ => condition());
+    }
+
+    public static void ScrollToElement(this IWebDriver webDriver, IWebElement webElement)
+    {
+        ((IJavaScriptExecutor)webDriver).ExecuteScript("arguments[0].scrollIntoView(true);", webElement);
+        WaitForElementVisible(webDriver, webElement);
     }
 
     public static void WaitForElementVisible(this IWebDriver webDriver, IWebElement webElement, int timeoutSeconds = 10)

@@ -94,6 +94,7 @@ public class SeleniumAutomation : LoginAutomation
     // Helper Methods
     private bool IsLoginSuccessfulOrError(IWebDriver webDriver)
     {
+        // todo: use custom wait class with parallel.
         return webDriver.Url.Contains("accounts/onetap") ||
                webDriver.Url.Contains("accounts/login/two_factor?next=%2F") ||
                webDriver.FindElements(By.XPath("//div[contains(text(),'your password was incorrect.')]")).Count > 0;

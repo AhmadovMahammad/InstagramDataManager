@@ -14,7 +14,7 @@ public static partial class TableExtension
 
         if (isSimpleType)
         {
-            if (columnNames.Length == 2 && data.Count() == 2)
+            if (columnNames.Length == data.Count())
             {
                 var countData = data.ToArray();
                 table.AddRow(countData.Select(num => num?.ToString()).ToArray());

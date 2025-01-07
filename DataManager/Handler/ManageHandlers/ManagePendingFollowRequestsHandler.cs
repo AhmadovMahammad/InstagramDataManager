@@ -14,7 +14,7 @@ public class ManagePendingFollowRequestsHandler() : BaseCommandHandler
     private const string UnfollowButtonXPath = "//button[contains(@class, '_a9-- _ap36 _a9-_') and normalize-space(text())='Unfollow']";
 
     private int _unfollowedCount = 0;
-    private int _notUnfollowedCount = 0;
+    private int _notAcceptedCount = 0;
 
     public override OperationType OperationType => OperationType.Hybrid;
 
@@ -65,7 +65,7 @@ public class ManagePendingFollowRequestsHandler() : BaseCommandHandler
                 if (!TryProcessNextRequest(webDriver, childData.Href))
                 {
                     $"Unable to decline the sent request for {childData.Value}. It seems this request is no longer pending or was not accepted.\n".WriteMessage(MessageType.Warning);
-                    _notUnfollowedCount++;
+                    _notAcceptedCount++;
                 }
                 else
                 {
@@ -74,7 +74,7 @@ public class ManagePendingFollowRequestsHandler() : BaseCommandHandler
             }
 
             "All possible requests were handled successfully.".WriteMessage(MessageType.Success);
-            TableExtension.DisplayAsTable([_unfollowedCount, _notUnfollowedCount], (ConsoleTable consoleTable) =>
+            new List<int> { _unfollowedCount, _notAcceptedCount }.DisplayAsTable((ConsoleTable consoleTable) =>
             {
                 consoleTable.Options.EnableCount = false;
             }, "Unfollowed Count", "Declined Count");
