@@ -12,6 +12,7 @@ internal class Program
     private static void Main(string[] args)
     {
         using Mutex mutex = new Mutex(true, @"Global\InstagramDataManager");
+        bool acquiredLock = true;
 
         try
         {
@@ -20,6 +21,9 @@ internal class Program
             {
                 Console.WriteLine("Another instance of the app is running! Press Any Key To Exit...");
                 Console.ReadKey();
+
+                acquiredLock = false;
+
                 return;
             }
 
@@ -36,7 +40,8 @@ internal class Program
         }
         finally
         {
-            mutex.ReleaseMutex();
+            if (acquiredLock)
+                mutex.ReleaseMutex();
         }
     }
 

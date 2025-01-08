@@ -6,7 +6,6 @@ using DataManager.Helper.Utility;
 using DataManager.Model;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
-using System.Collections.ObjectModel;
 using System.Text.Json;
 
 namespace DataManager.Handler.ManageHandlers;
