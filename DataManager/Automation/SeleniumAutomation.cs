@@ -60,13 +60,12 @@ public class SeleniumAutomation : LoginAutomation
             Task waitForConditionTask = WaitForAnyConditionAsync(Driver);
             waitForConditionTask.Wait();
 
-            var postLoginTasks = new[]
-            {
+            Task.WhenAll(
+            [
                 Task.Run(HandleLoginError),                // Check for login errors
                 Task.Run(HandleTwoFactorAuthentication)    // Handle two-factor authentication
-            };
+            ]).Wait();
 
-            Task.WhenAll(postLoginTasks).Wait();
             "You successfully logged in.\n".WriteMessage(MessageType.Success);
         }
         catch (TimeoutException ex)
@@ -121,8 +120,10 @@ public class SeleniumAutomation : LoginAutomation
                 break;
             }
 
-            bool result = condition.Invoke();
-            if (result) return Task.CompletedTask;
+            if (condition.Invoke())
+            {
+                return Task.CompletedTask;
+            }
 
             Thread.Sleep(1000);
         }
