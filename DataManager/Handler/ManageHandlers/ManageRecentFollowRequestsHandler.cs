@@ -85,25 +85,19 @@ public class ManageRecentFollowRequestsHandler() : BaseCommandHandler
             webDriver.Navigate().GoToUrl(href);
             WebDriverExtension.EnsureDomLoaded(webDriver);
 
-            By requestedBy = By.XPath(PendingButtonXPath);
-            IWebElement? requestedButton = webDriver.FindElementWithRetries("Requested Button", requestedBy, 1, 1000);
-
+            IWebElement? requestedButton = webDriver.FindWebElement(By.XPath(PendingButtonXPath), WebElementPriorityType.Medium);
             if (requestedButton == null)
             {
                 return false;
             }
-
             requestedButton.Click();
 
-            By unfollowBy = By.XPath(UnfollowButtonXPath);
-            IWebElement? unfollowButton = webDriver.FindElementWithRetries("Unfollow Button", unfollowBy, 2, 1000);
-
+            IWebElement? unfollowButton = webDriver.FindWebElement(By.XPath(UnfollowButtonXPath), WebElementPriorityType.Medium);
             if (unfollowButton == null)
             {
                 $"'Unfollow' button not found on the page.".WriteMessage(MessageType.Error);
                 return false;
             }
-
             unfollowButton.Click();
 
             $"Successfully unfollowed the request for the user.".WriteMessage(MessageType.Success);

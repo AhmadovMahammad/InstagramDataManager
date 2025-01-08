@@ -14,26 +14,31 @@ public static class WebDriverExtension
         jsExecutor.ExecuteScript("arguments[0].click();", webElement);
     }
 
-    public static IWebElement? FindElementWithRetries(this IWebDriver webDriver, string elementName, By by, int retries = 3, int initialDelay = 1500, bool logMessage = true)
+    public static IWebElement? FindWebElement(this IWebDriver webDriver, By by, WebElementPriorityType priorityType)
     {
+        (int retries, int initialDelay) = priorityType switch
+        {
+            WebElementPriorityType.High => (5, 500),
+            WebElementPriorityType.Medium => (3, 1500),
+            WebElementPriorityType.Low => (1, 3000),
+            _ => (3, 1500)
+        };
+
         for (int attempt = 1; attempt <= retries; attempt++)
         {
             try
             {
                 return webDriver.FindElement(by);
             }
-            catch (NoSuchElementException) when (attempt <= retries)
+            catch (NoSuchElementException) when (attempt < retries)
             {
-                if (logMessage)
-                    $"Retrying to find webElement: '{elementName}'. [{attempt}/{retries}]".WriteMessage(MessageType.Warning);
-
                 int currentDelay = initialDelay / attempt;
                 Task.Delay(currentDelay).Wait();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                if (logMessage)
-                    $"Error finding webElement: '{elementName}'".WriteMessage(MessageType.Error);
+                // Log error if an unexpected exception occurs
+                $"Error finding webElement: {ex.Message}".WriteMessage(MessageType.Error);
                 break;
             }
         }

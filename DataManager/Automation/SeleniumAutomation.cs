@@ -91,10 +91,10 @@ public class SeleniumAutomation : LoginAutomation
         {
             return WaitForCondition(() =>
             {
-                var webElement = webDriver.FindElementWithRetries(
-                    "Incorrect Password Label",
+                var webElement = webDriver.FindWebElement(
                     By.XPath("//div[normalize-space(text())='Sorry, your password was incorrect. Please double-check your password.']"),
-                    1, initialDelay: 1000, logMessage: false);
+                    WebElementPriorityType.Medium
+                    );
 
                 return webElement != null;
             }, token);
@@ -163,10 +163,10 @@ public class SeleniumAutomation : LoginAutomation
     // STEP #4
     protected override void SaveInfo()
     {
-        IWebElement? webElement = Driver.FindElementWithRetries(
-               "Save Info",
+        IWebElement? webElement = Driver.FindWebElement(
                By.XPath("//button[text()='Save info' and contains(@class,'_acan _acap _acas _aj1- _ap30')]"),
-               2, initialDelay: 1000, logMessage: false);
+               WebElementPriorityType.Medium
+               );
 
         if (webElement != null)
         {

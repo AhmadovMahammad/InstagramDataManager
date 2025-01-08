@@ -36,7 +36,7 @@ public class UnlikePostsHandler : BaseCommandHandler
         "Starting the process of unliking posts...".WriteMessage(MessageType.Info);
 
         // First, look for ErrorRefreshImageXPath; if it's present, you haven't liked any postings.
-        IWebElement? webElement = webDriver.FindElementWithRetries("Error Image", By.XPath(ErrorRefreshImageXPath), 1, 1000, false);
+        IWebElement? webElement = webDriver.FindWebElement(By.XPath(ErrorRefreshImageXPath), WebElementPriorityType.Low);
         if (webElement != null)
         {
             "You haven’t liked anything. Exiting...".WriteMessage(MessageType.Warning);
@@ -93,7 +93,7 @@ public class UnlikePostsHandler : BaseCommandHandler
             }
             else
             {
-                webElement = webDriver.FindElementWithRetries("Liked Post", by, 3, 1500);
+                webElement = webDriver.FindWebElement(by, WebElementPriorityType.Medium);
                 if (webElement != null)
                 {
                     sourceValue = webElement.GetDomAttribute("src");
@@ -163,7 +163,7 @@ public class UnlikePostsHandler : BaseCommandHandler
             webElement.Click();
             WebDriverExtension.EnsureDomLoaded(webDriver);
 
-            IWebElement? iconElement = webDriver.FindElementWithRetries("Unlike Button", By.XPath(UnlikeButtonXPath), 1, initialDelay: 1500, logMessage: false);
+            IWebElement? iconElement = webDriver.FindWebElement(By.XPath(UnlikeButtonXPath), WebElementPriorityType.Medium);
             if (iconElement != null)
             {
                 string ariaLabel = iconElement.GetDomAttribute("aria-label");

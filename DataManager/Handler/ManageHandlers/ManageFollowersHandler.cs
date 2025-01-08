@@ -1,5 +1,6 @@
 ﻿using DataManager.Constant;
 using DataManager.Constant.Enums;
+using DataManager.DesignPattern.Builder;
 using DataManager.Helper.Extension;
 using DataManager.Model;
 using OpenQA.Selenium;
@@ -10,11 +11,11 @@ namespace DataManager.Handler.ManageHandlers;
 
 public class ManageFollowersHandler : BaseCommandHandler
 {
-    private const string FollowButtonXPath = "//div[contains(@class,'_ap3a') and normalize-space(text())='Follow']";
     private const string UsernameXPath = "//span[@class='_ap3a _aaco _aacw _aacx _aad7 _aade' and @dir='auto']";
-    private const string NotAvailableNotificationXPath = "//span[@class='x1lliihq x1plvlek xryxfnj x1n2onr6' and @dir='auto' and normalize-space(text())='Sorry, this page isn't available.')]";
+    private const string FollowButtonXPath = "//div[@dir='auto' and normalize-space(text())='Follow']";
+    private const string NotAvailableNotificationXPath = "//a[@role='link' and normalize-space(text()) = 'Go back to Instagram.']";
 
-    private string _username = "";
+    private string _username = string.Empty;
     private int _followersCount = 0;
     private int _followingCount = 0;
 
@@ -25,36 +26,28 @@ public class ManageFollowersHandler : BaseCommandHandler
         if (!parameters.TryGetValue("WebDriver", out var webDriverObj) || webDriverObj is not IWebDriver webDriver)
             throw new ArgumentException("WebDriver is missing or invalid in parameters.");
 
-        string username = AskForUsername();
-        if (string.IsNullOrWhiteSpace(username)) return;
+        _username = AskForUsername();
+        if (string.IsNullOrWhiteSpace(_username)) return;
 
-        if (!NavigateToProfile(webDriver, username))
-        {
-            "Unable to access the profile. Please make sure the profile is valid and accessible.".WriteMessage(MessageType.Warning);
-            return;
-        }
+        bool success = false;
 
-        if (!IsFollowingProfile(webDriver))
-        {
-            "You can only process profiles you are following. Please follow the profile and try again.".WriteMessage(MessageType.Error);
-            return;
-        }
-
-        var userData = FetchUserData(webDriver, username);
-        if (userData == null)
-        {
-            "Failed to fetch followers data.".WriteMessage(MessageType.Error);
-            return;
-        }
-
-        HandleDataComparison(userData);
+        var taskBuilder = new SeleniumTaskBuilder(webDriver);
+        taskBuilder
+            .PerformAction(d => ValidateInput(webDriver, out success))
+            .PerformAction(d =>
+            {
+                if (success)
+                {
+                    ManageData(d);
+                }
+            }).ExecuteTasks();
     }
 
     private string AskForUsername()
     {
         while (true)
         {
-            Console.WriteLine("Enter the Username to process (or type 'exit' to quit):");
+            Console.WriteLine("\nEnter the Username to process (or type 'exit' to quit):");
             Console.Write("> ");
             _username = Console.ReadLine()?.Trim() ?? string.Empty;
 
@@ -68,15 +61,44 @@ public class ManageFollowersHandler : BaseCommandHandler
         }
     }
 
+    private void ValidateInput(IWebDriver webDriver, out bool success)
+    {
+        success = true;
+        // todo: add one find element with retries endpoint with enum, and decide there how much time you should retry
+
+        "Checking to see whether you have access to this profile. It may require a few seconds.".WriteMessage(MessageType.Info, addNewLine: false);
+        if (!NavigateToProfile(webDriver, _username))
+        {
+            ConsoleExtension.ClearLine();
+            success = false;
+
+            "Unable to access the profile. Please make sure the profile is valid and accessible.".WriteMessage(MessageType.Warning);
+            return;
+        }
+
+        if (!HasAccessToProfile(webDriver))
+        {
+            ConsoleExtension.ClearLine();
+            success = false;
+
+            "You can only process profiles you are following. Please follow the profile and try again.".WriteMessage(MessageType.Error);
+            return;
+        }
+
+        ConsoleExtension.ClearLine();
+    }
+
     private bool NavigateToProfile(IWebDriver webDriver, string username)
     {
+        Console.Write("");
+
         try
         {
             string url = $"https://www.instagram.com/{username}";
             webDriver.Navigate().GoToUrl(url);
             WebDriverExtension.EnsureDomLoaded(webDriver);
 
-            IWebElement? notAvailableNotification = webDriver.FindElementWithRetries(string.Empty, By.XPath(NotAvailableNotificationXPath), 1, logMessage: false);
+            var notAvailableNotification = webDriver.FindWebElement(By.XPath(NotAvailableNotificationXPath), WebElementPriorityType.Low);
             return notAvailableNotification is null;
         }
         catch (Exception ex)
@@ -86,11 +108,11 @@ public class ManageFollowersHandler : BaseCommandHandler
         }
     }
 
-    private bool IsFollowingProfile(IWebDriver webDriver)
+    private bool HasAccessToProfile(IWebDriver webDriver)
     {
         try
         {
-            var followButton = webDriver.FindElementWithRetries("Follow Button", By.XPath(FollowButtonXPath), retries: 2, initialDelay: 1000);
+            var followButton = webDriver.FindWebElement(By.XPath(FollowButtonXPath), WebElementPriorityType.Low);
             return followButton == null;
         }
         catch
@@ -99,12 +121,25 @@ public class ManageFollowersHandler : BaseCommandHandler
         }
     }
 
+    private void ManageData(IWebDriver webDriver)
+    {
+        var userData = FetchUserData(webDriver, _username);
+        if (userData == null)
+        {
+            "Failed to fetch followers data.".WriteMessage(MessageType.Error);
+            return;
+        }
+
+        HandleDataComparison(userData);
+    }
+
     private UserData? FetchUserData(IWebDriver webDriver, string username)
     {
         try
         {
             (string followersXPath, string followingXPath) = InitializeData(webDriver, username);
 
+            // todo: open modals.
             var followers = FetchList(webDriver, followersXPath, _followersCount, "Followers");
             var following = FetchList(webDriver, followingXPath, _followingCount, "Following");
 
@@ -141,7 +176,7 @@ public class ManageFollowersHandler : BaseCommandHandler
         }
     }
 
-    // todo: handle all users dynamically
+    // TODO: Refactor this method, cant load all followers correctly.
     private HashSet<UserEntry> FetchList(IWebDriver webDriver, string itemXPath, int totalCount, string action)
     {
         var listItems = new HashSet<UserEntry>();
@@ -149,13 +184,12 @@ public class ManageFollowersHandler : BaseCommandHandler
 
         try
         {
-            var modalButton = webDriver.FindElementWithRetries("Modal Page Button", By.XPath(itemXPath), retries: 3, initialDelay: 1500);
+            var modalButton = webDriver.FindWebElement(By.XPath(itemXPath), WebElementPriorityType.Low);
             modalButton?.Click();
 
             var wait = new WebDriverWait(webDriver, TimeSpan.FromSeconds(10));
             while (listItems.Count < totalCount)
             {
-                // todo:
                 wait.Until(driver =>
                 {
                     var currentElements = driver.FindElements(By.XPath(UsernameXPath));
@@ -186,6 +220,10 @@ public class ManageFollowersHandler : BaseCommandHandler
         catch (Exception ex)
         {
             ex.LogException($"Error occurred while fetching {action} list.");
+        }
+        finally
+        {
+            webDriver.Navigate().Refresh();
         }
 
         return listItems;

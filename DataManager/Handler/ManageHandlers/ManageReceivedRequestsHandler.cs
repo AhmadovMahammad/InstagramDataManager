@@ -43,11 +43,11 @@ public class ManageReceivedRequestsHandler() : BaseCommandHandler
 
         try
         {
-            IWebElement? notificationSidebarElement = webDriver.FindElementWithRetries("Notifications Button", By.XPath(NotificationsSidebarButtonXPath), 2, 1000);
+            IWebElement? notificationSidebarElement = webDriver.FindWebElement(By.XPath(NotificationsSidebarButtonXPath), WebElementPriorityType.Low);
             if (notificationSidebarElement != null)
             {
                 notificationSidebarElement.Click();
-                IWebElement? expandNotificationsButton = webDriver.FindElementWithRetries("Expand Notifications Button", By.XPath(ExpandNotificationsButtonXPath), 2, 1000);
+                IWebElement? expandNotificationsButton = webDriver.FindWebElement(By.XPath(ExpandNotificationsButtonXPath), WebElementPriorityType.Low);
 
                 if (expandNotificationsButton != null)
                 {

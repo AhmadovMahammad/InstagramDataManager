@@ -88,25 +88,19 @@ public class ManagePendingFollowRequestsHandler() : BaseCommandHandler
             webDriver.Navigate().GoToUrl(href);
             WebDriverExtension.EnsureDomLoaded(webDriver);
 
-            By pendingBy = By.XPath(PendingButtonXPath);
-            IWebElement? pendingButton = webDriver.FindElementWithRetries("Requested Button", pendingBy, 1, 1000);
-
+            IWebElement? pendingButton = webDriver.FindWebElement(By.XPath(PendingButtonXPath), WebElementPriorityType.Medium);
             if (pendingButton == null)
             {
                 return false;
             }
-
             pendingButton.Click();
 
-            By unfollowBy = By.XPath(UnfollowButtonXPath);
-            IWebElement? unfollowButton = webDriver.FindElementWithRetries("Unfollow Button", unfollowBy, 2, 1000);
-
+            IWebElement? unfollowButton = webDriver.FindWebElement(By.XPath(UnfollowButtonXPath), WebElementPriorityType.Medium);
             if (unfollowButton == null)
             {
                 $"'Unfollow' button not found on the page.".WriteMessage(MessageType.Error);
                 return false;
             }
-
             unfollowButton.Click();
 
             $"Successfully unfollowed the request for the user.".WriteMessage(MessageType.Success);
