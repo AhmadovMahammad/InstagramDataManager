@@ -1,22 +1,20 @@
 ﻿using DataManager.Constant;
 using DataManager.Constant.Enums;
-using DataManager.DesignPattern.Builder;
 using DataManager.Helper.Extension;
-using DataManager.Helper.Utility;
 using DataManager.Model;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 using System.Text.Json;
 
 namespace DataManager.Handler.ManageHandlers;
-public class ManageFollowersHandler() : BaseCommandHandler
+
+public class ManageFollowersHandler : BaseCommandHandler
 {
     private const string FollowButtonXPath = "//div[contains(@class,'_ap3a') and normalize-space(text())='Follow']";
     private const string UsernameXPath = "//span[@class='_ap3a _aaco _aacw _aacx _aad7 _aade' and @dir='auto']";
+    private const string NotAvailableNotificationXPath = "//span[@class='x1lliihq x1plvlek xryxfnj x1n2onr6' and @dir='auto' and normalize-space(text())='Sorry, this page isn't available.')]";
 
     private string _username = "";
-    private string _followersXPath = "";
-    private string _followingXPath = "";
     private int _followersCount = 0;
     private int _followingCount = 0;
 
@@ -24,169 +22,155 @@ public class ManageFollowersHandler() : BaseCommandHandler
 
     protected override void Execute(Dictionary<string, object> parameters)
     {
-        IWebDriver webDriver = parameters.Parse<IWebDriver>("WebDriver");
-        ManageData(webDriver);
+        if (!parameters.TryGetValue("WebDriver", out var webDriverObj) || webDriverObj is not IWebDriver webDriver)
+            throw new ArgumentException("WebDriver is missing or invalid in parameters.");
+
+        string username = AskForUsername();
+        if (string.IsNullOrWhiteSpace(username)) return;
+
+        if (!NavigateToProfile(webDriver, username))
+        {
+            "Unable to access the profile. Please make sure the profile is valid and accessible.".WriteMessage(MessageType.Warning);
+            return;
+        }
+
+        if (!IsFollowingProfile(webDriver))
+        {
+            "You can only process profiles you are following. Please follow the profile and try again.".WriteMessage(MessageType.Error);
+            return;
+        }
+
+        var userData = FetchUserData(webDriver, username);
+        if (userData == null)
+        {
+            "Failed to fetch followers data.".WriteMessage(MessageType.Error);
+            return;
+        }
+
+        HandleDataComparison(userData);
     }
 
-    private void ManageData(IWebDriver webDriver)
-    {
-        string profileUrl = AskForProfileUrl(webDriver);
-        if (string.IsNullOrEmpty(profileUrl)) return;
-
-        UserData? followersData = ProcessFollowersData(webDriver);
-        if (followersData == null) return;
-
-        HandleDataComparison(followersData);
-    }
-
-    private string AskForProfileUrl(IWebDriver webDriver)
+    private string AskForUsername()
     {
         while (true)
         {
-            Console.WriteLine("Enter the Username to stalk (or type 'exit' to quit):");
+            Console.WriteLine("Enter the Username to process (or type 'exit' to quit):");
             Console.Write("> ");
-            _username = Console.ReadLine() ?? string.Empty;
+            _username = Console.ReadLine()?.Trim() ?? string.Empty;
 
-            if (string.IsNullOrEmpty(_username) || _username.Equals("exit", StringComparison.CurrentCultureIgnoreCase))
+            if (string.IsNullOrWhiteSpace(_username) || _username.Equals("exit", StringComparison.OrdinalIgnoreCase))
             {
                 "Operation cancelled by user.".WriteMessage(MessageType.Warning);
                 return string.Empty;
             }
 
-            try
-            {
-                webDriver.Navigate().GoToUrl($"https://www.instagram.com/{_username}");
-                Console.WriteLine($"Navigating to profile > {_username}");
-                WebDriverExtension.EnsureDomLoaded(webDriver);
-
-                // Check if the "Follow" button exists
-                "\nChecking to see whether you follow this profile. It may require a few seconds.\n".WriteMessage(MessageType.Info);
-
-                var followButton = webDriver.FindElementWithRetries("Follow Button", By.XPath(FollowButtonXPath), retries: 2, initialDelay: 1000, logMessage: false);
-                if (followButton != null)
-                {
-                    "You can only stalk profiles you are already following. Please try again.".WriteMessage(MessageType.Error);
-                    continue;
-                }
-
-                InitializeData(webDriver, _username);
-                return _username;
-            }
-            catch (Exception ex)
-            {
-                ex.LogException("Failed to verify the profile. Please ensure the URL is valid.");
-            }
+            return _username;
         }
     }
 
-    private void InitializeData(IWebDriver webDriver, string profileUrl)
+    private bool NavigateToProfile(IWebDriver webDriver, string username)
     {
         try
         {
-            _followersXPath = $"//a[contains(@href,'/{profileUrl}/followers/')]/span/span[normalize-space(text())]";
-            _followingXPath = $"//a[contains(@href,'/{profileUrl}/following/')]/span/span[normalize-space(text())]";
+            string url = $"https://www.instagram.com/{username}";
+            webDriver.Navigate().GoToUrl(url);
+            WebDriverExtension.EnsureDomLoaded(webDriver);
 
-            // Fetch and parse the followers count
-            var followersElement = webDriver.FindElement(By.XPath(_followersXPath));
-            _followersCount = int.Parse(followersElement.Text.Trim());
-
-            // Fetch and parse the following count
-            var followingElement = webDriver.FindElement(By.XPath(_followingXPath));
-            _followingCount = int.Parse(followingElement.Text.Trim());
-
-            // Display Data
-            new List<string>
-            {
-                _username, _followersCount.ToString(), _followingCount.ToString()
-            }.DisplayAsTable(null, "Username", "Followers", "Following");
+            IWebElement? notAvailableNotification = webDriver.FindElementWithRetries(string.Empty, By.XPath(NotAvailableNotificationXPath), 1, logMessage: false);
+            return notAvailableNotification is null;
         }
         catch (Exception ex)
         {
-            ex.LogException("Failed to initialize data. Please ensure the profile URL is valid and accessible.");
+            ex.LogException("Failed to navigate to profile.");
+            return false;
         }
     }
 
-    private UserData? ProcessFollowersData(IWebDriver webDriver)
+    private bool IsFollowingProfile(IWebDriver webDriver)
     {
-        var taskBuilder = new SeleniumTaskBuilder(webDriver);
-
         try
         {
-            var followers = new HashSet<UserEntry>();
-            var following = new HashSet<UserEntry>();
+            var followButton = webDriver.FindElementWithRetries("Follow Button", By.XPath(FollowButtonXPath), retries: 2, initialDelay: 1000);
+            return followButton == null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
-            taskBuilder
-                .PerformAction((webDriver) =>
-                {
-                    WebDriverExtension.EnsureDomLoaded(webDriver);
-                    followers = FetchList(webDriver, _followersXPath, _followersCount, "Followers");
-                })
-                .PerformAction((webDriver) => webDriver.Navigate().Refresh())
-                .PerformAction((webDriver) =>
-                {
-                    WebDriverExtension.EnsureDomLoaded(webDriver);
-                    following = FetchList(webDriver, _followingXPath, _followingCount, "Following");
-                }).ExecuteTasks();
+    private UserData? FetchUserData(IWebDriver webDriver, string username)
+    {
+        try
+        {
+            (string followersXPath, string followingXPath) = InitializeData(webDriver, username);
+
+            var followers = FetchList(webDriver, followersXPath, _followersCount, "Followers");
+            var following = FetchList(webDriver, followingXPath, _followingCount, "Following");
 
             return new UserData(followers, following, DateTime.Now);
         }
         catch (Exception ex)
         {
-            ex.LogException("Error processing followers data.");
+            ex.LogException("Error fetching user data.");
             return null;
         }
     }
 
-    private HashSet<UserEntry> FetchList(IWebDriver webDriver, string itemXPath, int totalCount, string action = "")
+    private (string followersXPath, string followingXPath) InitializeData(IWebDriver webDriver, string username)
+    {
+        try
+        {
+            string followersXPath = $"//a[contains(@href,'/{username}/followers/')]/span/span[normalize-space(text())]";
+            string followingXPath = $"//a[contains(@href,'/{username}/following/')]/span/span[normalize-space(text())]";
+
+            _followersCount = int.Parse(webDriver.FindElement(By.XPath(followersXPath)).Text.Trim());
+            _followingCount = int.Parse(webDriver.FindElement(By.XPath(followingXPath)).Text.Trim());
+
+            new List<string>
+            {
+                username, _followersCount.ToString(), _followingCount.ToString()
+            }.DisplayAsTable(null, "Username", "Followers", "Following");
+
+            return (followersXPath, followingXPath);
+        }
+        catch (Exception ex)
+        {
+            ex.LogException("Failed to initialize data. Ensure the profile URL is valid and accessible.");
+            throw;
+        }
+    }
+
+    // todo: handle all users dynamically
+    private HashSet<UserEntry> FetchList(IWebDriver webDriver, string itemXPath, int totalCount, string action)
     {
         var listItems = new HashSet<UserEntry>();
-        int previousElementCount = 0;
         int id = 1;
 
         try
         {
-            IWebElement? modalButton = webDriver.FindElementWithRetries("Modal Page Button", By.XPath(itemXPath), retries: 3, initialDelay: 1500, false);
-            if (modalButton == null) return listItems;
-            modalButton.Click();
+            var modalButton = webDriver.FindElementWithRetries("Modal Page Button", By.XPath(itemXPath), retries: 3, initialDelay: 1500);
+            modalButton?.Click();
 
             var wait = new WebDriverWait(webDriver, TimeSpan.FromSeconds(10));
             while (listItems.Count < totalCount)
             {
-                try
+                // todo:
+                wait.Until(driver =>
                 {
-                    wait.Until(driver =>
-                    {
-                        var currentElements = driver.FindElements(By.XPath(UsernameXPath));
-
-                        var newText = currentElements.Select(e => e.Text.Trim()).ToHashSet();
-                        var previousText = listItems.Select(e => e.Username).ToHashSet();
-
-                        return newText.Except(previousText).Any();
-                    });
-                }
-                catch (WebDriverTimeoutException)
-                {
-                    Console.WriteLine($"Proceeding with available data. ({listItems.Count})");
-                    break;
-                }
+                    var currentElements = driver.FindElements(By.XPath(UsernameXPath));
+                    var newText = currentElements.Select(e => e.Text.Trim()).ToHashSet();
+                    var previousText = listItems.Select(e => e.Username).ToHashSet();
+                    return newText.Except(previousText).Any();
+                });
 
                 var currentElements = webDriver.FindElements(By.XPath(UsernameXPath));
                 foreach (var element in currentElements)
                 {
-                    string username = element.Text?.Trim() ?? string.Empty;
-                    if (!string.IsNullOrEmpty(username) && listItems.All(x => x.Username != username))
-                    {
-                        var userEntry = new UserEntry(id++, username);
-                        listItems.Add(userEntry);
-                    }
-
-                    if (listItems.Count >= totalCount)
-                    {
-                        return listItems;
-                    }
+                    string username = element.Text.Trim();
+                    listItems.Add(new UserEntry(id++, username));
                 }
 
-                previousElementCount = currentElements.Count;
                 var lastElement = currentElements.LastOrDefault();
                 if (lastElement != null)
                 {
@@ -201,7 +185,7 @@ public class ManageFollowersHandler() : BaseCommandHandler
         }
         catch (Exception ex)
         {
-            ex.LogException($"Error occurred while fetching list for {action}.");
+            ex.LogException($"Error occurred while fetching {action} list.");
         }
 
         return listItems;
@@ -211,7 +195,7 @@ public class ManageFollowersHandler() : BaseCommandHandler
     {
         Console.WriteLine("Do you have previous data to compare? (y/n):");
         Console.Write("> ");
-        bool hasPreviousData = Console.ReadLine()?.Trim().ToLower() == "y";
+        bool hasPreviousData = Console.ReadLine()?.Trim().Equals("y", StringComparison.OrdinalIgnoreCase) ?? false;
 
         if (hasPreviousData)
         {
@@ -220,10 +204,15 @@ public class ManageFollowersHandler() : BaseCommandHandler
 
             if (File.Exists(filePath))
             {
-                using FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-                var previousData = JsonSerializer.Deserialize<UserData>(fileStream);
-
-                AnalyzeAndDisplayChanges(currentData, previousData);
+                var previousData = LoadUserData(filePath);
+                if (previousData != null)
+                {
+                    AnalyzeAndDisplayChanges(currentData, previousData);
+                }
+                else
+                {
+                    "Failed to load previous data.".WriteMessage(MessageType.Error);
+                }
             }
             else
             {
@@ -232,20 +221,48 @@ public class ManageFollowersHandler() : BaseCommandHandler
         }
         else
         {
-            string fileName = Path.Combine(AppConstant.ApplicationDataFolderPath, $"followers_data_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.json");
-
-            using (FileStream fileStream = new FileStream(fileName, FileMode.CreateNew, FileAccess.Write))
-            using (TextWriter writer = new StreamWriter(fileStream))
+            if (TrySaveUserData(currentData, out string fileName))
             {
-                writer.Write(JsonSerializer.Serialize(currentData));
+                $"Current followers data saved to {fileName}.".WriteMessage(MessageType.Success);
             }
-
-            $"Current followers data saved to {fileName}.".WriteMessage(MessageType.Success);
         }
     }
 
-    private void AnalyzeAndDisplayChanges(UserData currentData, UserData? previousData)
+    private bool TrySaveUserData(UserData userData, out string fileName)
     {
+        fileName = Path.Combine(AppConstant.ApplicationDataFolderPath, $"followers_data_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.json");
 
+        try
+        {
+            using FileStream fileStream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.Write);
+            using TextWriter writer = new StreamWriter(fileStream);
+            var data = JsonSerializer.Serialize(userData);
+            writer.Write(JsonSerializer.Serialize(data));
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ex.LogException("");
+            return false;
+        }
+    }
+
+    private UserData? LoadUserData(string filePath)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<UserData>(File.ReadAllText(filePath));
+        }
+        catch (Exception ex)
+        {
+            ex.LogException("Failed to load user data.");
+            return null;
+        }
+    }
+
+    private void AnalyzeAndDisplayChanges(UserData currentData, UserData previousData)
+    {
+        // Analyze changes and display results (omitted for brevity)
     }
 }

@@ -51,12 +51,6 @@ public static class WebDriverExtension
         });
     }
 
-    public static void WaitForCondition(this IWebDriver driver, Func<bool> condition, TimeSpan timeout)
-    {
-        var wait = new WebDriverWait(new SystemClock(), driver, timeout, TimeSpan.FromMilliseconds(500));
-        wait.Until(_ => condition());
-    }
-
     public static void ScrollToElement(this IWebDriver webDriver, IWebElement webElement)
     {
         ((IJavaScriptExecutor)webDriver).ExecuteScript("arguments[0].scrollIntoView(true);", webElement);
