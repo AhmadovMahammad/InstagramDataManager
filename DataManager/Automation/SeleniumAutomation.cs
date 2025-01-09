@@ -9,9 +9,8 @@ using OpenQA.Selenium;
 namespace DataManager.Automation;
 public class SeleniumAutomation : LoginAutomation
 {
-    public delegate LoginOutcome ConditionDelegate(IWebDriver webDriver);
-
-    public SeleniumAutomation() : base() { }
+    // TODO: Save all XPath information into one class.
+    private const string SaveInfoXPath = "//button[text()='Save info' and contains(@class,'_acan _acap _acas _aj1- _ap30')]";
 
     // Overridden methods
     protected override IWebDriver InitializeDriver() => FirefoxDriverFactory.CreateDriver(_validationChain);
@@ -91,7 +90,7 @@ public class SeleniumAutomation : LoginAutomation
             return WaitForCondition(() =>
             {
                 var webElement = webDriver.FindWebElement(
-                    By.XPath("//div[normalize-space(text())='Sorry, your password was incorrect. Please double-check your password.']"),
+                    By.XPath("//div[contains(text(),'your password was incorrect')]"),
                     WebElementPriorityType.Medium
                     );
 
@@ -165,7 +164,7 @@ public class SeleniumAutomation : LoginAutomation
     protected override void SaveInfo()
     {
         IWebElement? webElement = Driver.FindWebElement(
-               By.XPath("//button[text()='Save info' and contains(@class,'_acan _acap _acas _aj1- _ap30')]"),
+               By.XPath(SaveInfoXPath),
                WebElementPriorityType.Medium
                );
 

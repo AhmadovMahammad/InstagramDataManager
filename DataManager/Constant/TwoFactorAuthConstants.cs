@@ -2,7 +2,7 @@
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 using SeleniumExtras.WaitHelpers;
-using static DataManager.Automation.SeleniumAutomation;
+using static DataManager.Delegates;
 
 namespace DataManager.Constant;
 public static class TwoFactorAuthConstants

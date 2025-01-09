@@ -5,6 +5,7 @@ using DataManager.Helper.Extension;
 using DataManager.Model;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace DataManager.Handler.ManageHandlers;
@@ -14,6 +15,7 @@ public class ManageFollowersHandler : BaseCommandHandler
     private const string UsernameXPath = "//span[@class='_ap3a _aaco _aacw _aacx _aad7 _aade' and @dir='auto']";
     private const string FollowButtonXPath = "//div[@dir='auto' and normalize-space(text())='Follow']";
     private const string NotAvailableNotificationXPath = "//a[@role='link' and normalize-space(text()) = 'Go back to Instagram.']";
+    private const string ScrollbarXPath = "//div[contains(@class,'xyi19xy x1ccrb07 xtf3nb5 x1pc53ja x1lliihq x1iyjqo2 xs83m0k xz65tgg x1rife3k x1n2onr6')]";
 
     private string _username = string.Empty;
     private int _followersCount = 0;
@@ -64,7 +66,6 @@ public class ManageFollowersHandler : BaseCommandHandler
     private void ValidateInput(IWebDriver webDriver, out bool success)
     {
         success = true;
-        // todo: add one find element with retries endpoint with enum, and decide there how much time you should retry
 
         "Checking to see whether you have access to this profile. It may require a few seconds.".WriteMessage(MessageType.Info, addNewLine: false);
         if (!NavigateToProfile(webDriver, _username))
@@ -139,9 +140,8 @@ public class ManageFollowersHandler : BaseCommandHandler
         {
             (string followersXPath, string followingXPath) = InitializeData(webDriver, username);
 
-            // todo: open modals.
-            var followers = FetchList(webDriver, followersXPath, _followersCount, "Followers");
-            var following = FetchList(webDriver, followingXPath, _followingCount, "Following");
+            var followers = FetchUserList(webDriver, followersXPath, _followersCount, "Followers");
+            var following = FetchUserList(webDriver, followingXPath, _followingCount, "Following");
 
             return new UserData(followers, following, DateTime.Now);
         }
@@ -176,8 +176,7 @@ public class ManageFollowersHandler : BaseCommandHandler
         }
     }
 
-    // TODO: Refactor this method, cant load all followers correctly.
-    private HashSet<UserEntry> FetchList(IWebDriver webDriver, string itemXPath, int totalCount, string action)
+    private HashSet<UserEntry> FetchUserList(IWebDriver webDriver, string itemXPath, int totalCount, string action)
     {
         var listItems = new HashSet<UserEntry>();
         int id = 1;
@@ -229,6 +228,73 @@ public class ManageFollowersHandler : BaseCommandHandler
         return listItems;
     }
 
+    // TODO: Scroll it with max height, do not use scroll step 150 as default value [extension]
+    private HashSet<UserEntry> FetchUserList_v2(IWebDriver webDriver, string itemXPath, int totalCount, string action)
+    {
+        var listItems = new HashSet<UserEntry>();
+        int id = 1;
+        IWebElement? scrollbarElement = null;
+
+        try
+        {
+            var modalButton = webDriver.FindWebElement(By.XPath(itemXPath), WebElementPriorityType.Medium);
+            if (modalButton == null) return listItems;
+
+            modalButton.Click();
+            webDriver.EnsureDomLoaded();
+            scrollbarElement = webDriver.FindWebElement(By.XPath(ScrollbarXPath), WebElementPriorityType.Low);
+
+            var wait = new WebDriverWait(webDriver, TimeSpan.FromSeconds(10));
+            while (listItems.Count < totalCount)
+            {
+                wait.Until(driver =>
+                {
+                    var currentElements = driver.FindElements(By.XPath(UsernameXPath));
+
+                    var newText = currentElements.Select(e => e.Text.Trim()).ToHashSet();
+                    var previousText = listItems.Select(e => e.Username).ToHashSet();
+
+                    return newText.Except(previousText).Any();
+                });
+
+                var currentElements = webDriver.FindElements(By.XPath(UsernameXPath));
+                AddUniqueUsernames(currentElements, listItems, ref id);
+
+                if (scrollbarElement != null)
+                {
+                    webDriver.ScrollToBottom(scrollbarElement);
+                    Thread.Sleep(1000);
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ex.LogException($"Error occurred while fetching {action} list.");
+        }
+        finally
+        {
+            webDriver.Navigate().Refresh();
+        }
+
+        return listItems;
+    }
+
+    private void AddUniqueUsernames(IReadOnlyCollection<IWebElement> elements, HashSet<UserEntry> listItems, ref int id)
+    {
+        foreach (var element in elements)
+        {
+            string username = element.Text.Trim();
+            if (listItems.All(userEntry => userEntry.Username != username))
+            {
+                listItems.Add(new UserEntry(id++, username));
+            }
+        }
+    }
+
     private void HandleDataComparison(UserData currentData)
     {
         Console.WriteLine("Do you have previous data to compare? (y/n):");
@@ -274,14 +340,15 @@ public class ManageFollowersHandler : BaseCommandHandler
         {
             using FileStream fileStream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.Write);
             using TextWriter writer = new StreamWriter(fileStream);
+
             var data = JsonSerializer.Serialize(userData);
-            writer.Write(JsonSerializer.Serialize(data));
+            writer.Write(data);
 
             return true;
         }
         catch (Exception ex)
         {
-            ex.LogException("");
+            ex.LogException("An error occurred while saving user data as JSON file.");
             return false;
         }
     }
@@ -301,6 +368,6 @@ public class ManageFollowersHandler : BaseCommandHandler
 
     private void AnalyzeAndDisplayChanges(UserData currentData, UserData previousData)
     {
-        // Analyze changes and display results (omitted for brevity)
+
     }
 }

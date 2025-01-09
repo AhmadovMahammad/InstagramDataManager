@@ -6,14 +6,6 @@ using OpenQA.Selenium.Support.UI;
 namespace DataManager.Helper.Extension;
 public static class WebDriverExtension
 {
-    public static IWebDriver GetWebDriver(this IWebElement webElement) => ((IWrapsDriver)webElement).WrappedDriver;
-
-    public static void JavaScriptClick(this IWebElement webElement)
-    {
-        IJavaScriptExecutor jsExecutor = (IJavaScriptExecutor)webElement.GetWebDriver();
-        jsExecutor.ExecuteScript("arguments[0].click();", webElement);
-    }
-
     public static IWebElement? FindWebElement(this IWebDriver webDriver, By by, WebElementPriorityType priorityType)
     {
         (int retries, int initialDelay) = priorityType switch
@@ -35,10 +27,8 @@ public static class WebDriverExtension
                 int currentDelay = initialDelay / attempt;
                 Task.Delay(currentDelay).Wait();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // Log error if an unexpected exception occurs
-                $"Error finding webElement: {ex.Message}".WriteMessage(MessageType.Error);
                 break;
             }
         }
@@ -58,8 +48,16 @@ public static class WebDriverExtension
 
     public static void ScrollToElement(this IWebDriver webDriver, IWebElement webElement)
     {
-        ((IJavaScriptExecutor)webDriver).ExecuteScript("arguments[0].scrollIntoView(true);", webElement);
+        ((IJavaScriptExecutor)webDriver).ExecuteScript(
+            "arguments[0].scrollIntoView(true);", webElement);
+
         WaitForElementVisible(webDriver, webElement);
+    }
+
+    public static void ScrollToBottom(this IWebDriver webDriver, IWebElement webElement, int scrollStep = 150)
+    {
+        ((IJavaScriptExecutor)webDriver).ExecuteScript(
+            "arguments[0].scrollTop += arguments[1];", webElement, scrollStep);
     }
 
     public static void WaitForElementVisible(this IWebDriver webDriver, IWebElement webElement, int timeoutSeconds = 10)
@@ -67,4 +65,7 @@ public static class WebDriverExtension
         new WebDriverWait(webDriver, TimeSpan.FromSeconds(timeoutSeconds))
             .Until(d => webElement.Displayed);
     }
+
+    // get IWebDriver by using IWebElement
+    public static IWebDriver GetWebDriver(this IWebElement webElement) => ((IWrapsDriver)webElement).WrappedDriver;
 }
