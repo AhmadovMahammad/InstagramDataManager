@@ -13,19 +13,15 @@ public class FirefoxDriverFactory
     public static IWebDriver CreateDriver(IChainHandler validationChain)
     {
         _validationChain = validationChain;
-
-        var webDriver = new FirefoxDriver(GetFirefoxOptions());
-        webDriver.Manage().Timeouts().ImplicitWait = AppConstant.ImplicitWait;
-
-        return webDriver;
+        return new FirefoxDriver(GetFirefoxOptions());
     }
 
     private static FirefoxOptions? GetFirefoxOptions()
     {
         FirefoxOptions firefoxOptions = new FirefoxOptions()
         {
-            BinaryLocation = GetFirefoxExecutablePath(),
             LogLevel = FirefoxDriverLogLevel.Fatal,
+            EnableDevToolsProtocol = true,
         };
 
         if (!File.Exists(_settingsPath))
@@ -37,7 +33,7 @@ public class FirefoxDriverFactory
         return firefoxOptions;
     }
 
-    private static void ReadSettings(ref FirefoxOptions defaultOptions)
+    private static void ReadSettings(ref FirefoxOptions firefoxOptions)
     {
         XmlReaderSettings xmlReaderSettings = new()
         {
@@ -52,48 +48,77 @@ public class FirefoxDriverFactory
         {
             if (xmlReader.NodeType == XmlNodeType.Element)
             {
-                string name = xmlReader.Name;
-
-                switch (name)
+                switch (xmlReader.Name.ToLowerInvariant())
                 {
+                    // Browser Settings
                     case "headless":
                         if (xmlReader.Read() && xmlReader.NodeType == XmlNodeType.Text)
                         {
                             string value = xmlReader.Value;
                             if (!string.IsNullOrWhiteSpace(value) && bool.TryParse(value, out bool isHeadless) && isHeadless)
                             {
-                                defaultOptions.AddArgument("--headless");
+                                firefoxOptions.AddArgument("--headless");
                             }
                         }
                         break;
 
-                    case "disableBotDetection":
+                    case "firefoxpath":
+                        if (xmlReader.Read() && xmlReader.NodeType == XmlNodeType.Text)
+                        {
+                            string value = xmlReader.Value;
+                            while (!File.Exists(value) || !_validationChain.Handle(value))
+                            {
+                                Console.Write("Please enter the path to your Firefox Developer Edition executable \n(e.g., C:\\Program Files\\Firefox Developer Edition\\firefox.exe): ");
+                                value = Console.ReadLine() ?? string.Empty;
+                            }
+                        }
+                        break;
+
+                    case "disablebotdetection":
                         if (xmlReader.Read() && xmlReader.NodeType == XmlNodeType.Text)
                         {
                             string value = xmlReader.Value;
                             if (!string.IsNullOrWhiteSpace(value) && bool.TryParse(value, out bool disableBotDetection) && disableBotDetection)
                             {
-                                defaultOptions.AddArgument("--disable-blink-features=AutomationControlled");
-                                defaultOptions.SetPreference("dom.webdriver.enabled", false);
-                                defaultOptions.SetPreference("useAutomationExtension", false);
+                                firefoxOptions.AddArgument("--disable-blink-features=AutomationControlled");
+                                firefoxOptions.SetPreference("dom.webdriver.enabled", false);
+                                firefoxOptions.SetPreference("useAutomationExtension", false);
+                            }
+                        }
+                        break;
+
+                    // Timeouts
+                    case "implicitwait":
+                        if (xmlReader.Read() && xmlReader.NodeType == XmlNodeType.Text)
+                        {
+                            if (int.TryParse(xmlReader.Value, out int implicitWait))
+                            {
+                                firefoxOptions.ImplicitWaitTimeout = TimeSpan.FromSeconds(implicitWait);
+                            }
+                        }
+                        break;
+
+                    case "pageload":
+                        if (xmlReader.Read() && xmlReader.NodeType == XmlNodeType.Text)
+                        {
+                            if (int.TryParse(xmlReader.Value, out int pageLoadTimeout))
+                            {
+                                firefoxOptions.PageLoadTimeout = TimeSpan.FromSeconds(pageLoadTimeout);
+                            }
+                        }
+                        break;
+
+                    case "scripttimeout":
+                        if (xmlReader.Read() && xmlReader.NodeType == XmlNodeType.Text)
+                        {
+                            if (int.TryParse(xmlReader.Value, out int scriptTimeout))
+                            {
+                                firefoxOptions.ScriptTimeout = TimeSpan.FromSeconds(scriptTimeout);
                             }
                         }
                         break;
                 }
             }
         }
-    }
-
-    private static string GetFirefoxExecutablePath()
-    {
-        string firefoxPath = @"C:\Program Files\Firefox Developer Edition\firefox.exe";
-
-        while (!File.Exists(firefoxPath) || !_validationChain.Handle(firefoxPath))
-        {
-            Console.Write("Please enter the path to your Firefox Developer Edition executable \n(e.g., C:\\Program Files\\Firefox Developer Edition\\firefox.exe): ");
-            firefoxPath = Console.ReadLine() ?? string.Empty;
-        }
-
-        return firefoxPath;
     }
 }

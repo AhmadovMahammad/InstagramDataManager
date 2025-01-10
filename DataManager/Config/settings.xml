@@ -1,5 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<firefoxOptions>
-	<headless>true</headless>
-	<disableBotDetection>true</disableBotDetection>
-</firefoxOptions>
+<ConfigurationSettings>
+	<BrowserSettings>
+		<Headless>false</Headless>
+		<FirefoxPath>C:\Program Files\Firefox Developer Edition\firefox.exe</FirefoxPath>
+		<DisableBotDetection>true</DisableBotDetection>
+	</BrowserSettings>
+
+	<Timeouts>
+		<ImplicitWait>10</ImplicitWait>
+		<PageLoad>30</PageLoad>
+		<ScriptTimeout>15</ScriptTimeout>
+	</Timeouts>
+</ConfigurationSettings>

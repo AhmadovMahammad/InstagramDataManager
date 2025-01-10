@@ -8,14 +8,12 @@ public static class AppConstant
 {
     public static readonly string ApplicationDataFolderPath =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "InstagramDataManager");
-    public static readonly TimeSpan ImplicitWait = TimeSpan.FromSeconds(10);
+
     public static readonly TimeSpan ExplicitWait = TimeSpan.FromSeconds(15);
     public static readonly int MaxRetryPerPost = 3;
-    public static readonly TimeSpan SleepInterval = TimeSpan.FromMilliseconds(500);
 
     public static IEnumerable<MenuModel> GetAvailableOperations()
     {
-        
         return Enum.GetValues<CommandType>()
             .Select(commandType => new MenuModel
             {
