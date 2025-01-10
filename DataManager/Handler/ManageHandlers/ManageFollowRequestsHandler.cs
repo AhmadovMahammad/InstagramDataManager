@@ -9,12 +9,23 @@ using DataManager.Models.JsonModels;
 using OpenQA.Selenium;
 
 namespace DataManager.Handler.ManageHandlers;
-public class ManageRecentFollowRequestsHandler() : BaseCommandHandler
+public class ManageFollowRequestsHandler : BaseCommandHandler
 {
+    private readonly string _rootElementPath = string.Empty;
     private int _unfollowedCount = 0;
     private int _notAcceptedCount = 0;
 
     public override OperationType OperationType => OperationType.Hybrid;
+
+    public ManageFollowRequestsHandler(CommandType commandType)
+    {
+        _rootElementPath = commandType switch
+        {
+            CommandType.Manage_Recent_Follow_Requests => "relationships_permanent_follow_requests",
+            CommandType.Manage_Pending_Follow_Requests => "relationships_follow_requests_sent",
+            _ => string.Empty
+        };
+    }
 
     protected override void Execute(Dictionary<string, object> parameters)
     {
@@ -22,7 +33,7 @@ public class ManageRecentFollowRequestsHandler() : BaseCommandHandler
         IFileFormatStrategy strategy = parameters.Parse<IFileFormatStrategy>("FileFormatStrategy");
         IWebDriver webDriver = parameters.Parse<IWebDriver>("WebDriver");
 
-        ManageData(strategy.ProcessFile(filePath, "relationships_permanent_follow_requests"), webDriver);
+        ManageData(strategy.ProcessFile(filePath, _rootElementPath), webDriver);
     }
 
     private void ManageData(IEnumerable<RelationshipData> data, IWebDriver webDriver)
@@ -33,9 +44,8 @@ public class ManageRecentFollowRequestsHandler() : BaseCommandHandler
             return;
         }
 
-        // Display Result
-        Console.WriteLine($"[{DateTime.Now}] Total recent follow requests found: {data.Count()}");
-        if (!"\nWould you like to decline these recent requests? (y/n)".AskToProceed())
+        Console.WriteLine($"[{DateTime.Now}] Total sent follow requests found: {data.Count()}");
+        if (!"Would you like to decline or return these pending requests? (y/n)".AskToProceed())
         {
             Console.WriteLine($"Operation canceled by the user.");
             return;
@@ -44,11 +54,11 @@ public class ManageRecentFollowRequestsHandler() : BaseCommandHandler
         // Build and execute
         var taskBuilder = new SeleniumTaskBuilder(webDriver);
         taskBuilder
-            .PerformAction((IWebDriver webDriver) => HandleAllRecentRequests(webDriver, data))
+            .PerformAction((IWebDriver webDriver) => HandleAllPendingRequests(webDriver, data))
             .ExecuteTasks();
     }
 
-    private void HandleAllRecentRequests(IWebDriver webDriver, IEnumerable<RelationshipData> data)
+    private void HandleAllPendingRequests(IWebDriver webDriver, IEnumerable<RelationshipData> data)
     {
         "Starting the process of declining requests...\n".WriteMessage(MessageType.Info);
         WebDriverExtension.EnsureDomLoaded(webDriver);
@@ -65,7 +75,10 @@ public class ManageRecentFollowRequestsHandler() : BaseCommandHandler
                     $"Unable to decline the sent request for {childData.Value}. It seems this request is no longer pending or was not accepted.\n".WriteMessage(MessageType.Warning);
                     _notAcceptedCount++;
                 }
-                else _unfollowedCount++;
+                else
+                {
+                    _unfollowedCount++;
+                }
             }
 
             "All possible requests were handled successfully.".WriteMessage(MessageType.Success);

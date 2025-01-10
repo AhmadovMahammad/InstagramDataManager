@@ -15,15 +15,15 @@ public static class CommandFactory
     {
         return commandType switch
         {
-            // todo: merge 'manage recent/pending follow requests'
-            CommandType.Manage_Recent_Follow_Requests => new ManageRecentFollowRequestsHandler(),
+            CommandType.Manage_Followers => new ManageFollowersHandler(),
+            CommandType.Manage_Recently_Unfollowed => new ManageRecentlyUnfollowedHandler(),
+            CommandType.Unlike_All_Posts => new UnlikePostsHandler(),
             CommandType.Manage_Received_Requests => new ManageReceivedRequestsHandler(),
             CommandType.Manage_Blocked_Profiles => new ManageBlockedProfilesHandler(),
             CommandType.Manage_Close_Friends => new ManageCloseFriendsHandler(),
-            CommandType.Manage_Followers => new ManageFollowersHandler(),
-            CommandType.Manage_Recently_Unfollowed => new ManageRecentlyUnfollowedHandler(),
-            CommandType.Manage_Pending_Follow_Requests => new ManagePendingFollowRequestsHandler(),
-            CommandType.Unlike_All_Posts => new UnlikePostsHandler(),
+            var type when (type == CommandType.Manage_Pending_Follow_Requests || type == CommandType.Manage_Recent_Follow_Requests)
+            => new ManageFollowRequestsHandler(commandType),
+
             _ => null
         };
     }
