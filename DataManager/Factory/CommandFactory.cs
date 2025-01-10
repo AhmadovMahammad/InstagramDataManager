@@ -21,7 +21,7 @@ public static class CommandFactory
             CommandType.Manage_Received_Requests => new ManageReceivedRequestsHandler(),
             CommandType.Manage_Blocked_Profiles => new ManageBlockedProfilesHandler(),
             CommandType.Manage_Close_Friends => new ManageCloseFriendsHandler(),
-            var type when (type == CommandType.Manage_Pending_Follow_Requests || type == CommandType.Manage_Recent_Follow_Requests)
+            var cType when (cType == CommandType.Manage_Pending_Follow_Requests || cType == CommandType.Manage_Recent_Follow_Requests)
             => new ManageFollowRequestsHandler(commandType),
 
             _ => null

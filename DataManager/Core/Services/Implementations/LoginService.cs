@@ -1,22 +1,49 @@
-﻿using DataManager.Constant;
-using DataManager.Constant.Enums;
+﻿using DataManager.Constant.Enums;
+using DataManager.Constant;
+using DataManager.Core.Services.Contracts;
+using DataManager.DesignPattern.ChainOfResponsibility;
 using DataManager.Exceptions;
 using DataManager.Factory;
 using DataManager.Helper.Extension;
 using DataManager.Model;
 using OpenQA.Selenium;
 
-namespace DataManager.Automation;
-public class SeleniumAutomation : LoginAutomation
+namespace DataManager.Core.Services.Implementations;
+public class LoginService : ILoginService
 {
-    protected override IWebDriver InitializeDriver() => FirefoxDriverFactory.CreateDriver(_validationChain);
+    private readonly IChainHandler _validationChain;
 
-    // STEP #1
-    protected override void NavigateToLoginPage()
+    public LoginService()
+    {
+        _validationChain = new ArgumentNotEmptyHandler()
+                .SetNext(new FileExistsHandler())
+                .SetNext(new FileExtensionHandler([".exe"]));
+
+        WebDriver = FirefoxDriverFactory.CreateDriver(_validationChain);
+    }
+    
+    public IWebDriver WebDriver { get; }
+
+    public void ExecuteLogin()
     {
         try
         {
-            Driver.Navigate().GoToUrl("https://www.instagram.com/accounts/login/");
+            NavigateToLoginPage();
+            PerformLoginSteps();
+            HandleLoginOutcome();
+            SaveInfo();
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+    }
+
+    protected virtual void NavigateToLoginPage()
+    {
+        try
+        {
+            WebDriver.Navigate().GoToUrl("https://www.instagram.com/accounts/login/");
             "Instagram login page opened successfully!\n".WriteMessage(MessageType.Success);
         }
         catch (Exception ex)
@@ -25,20 +52,19 @@ public class SeleniumAutomation : LoginAutomation
         }
     }
 
-    // STEP #2
-    protected override void PerformLoginSteps()
+    protected virtual void PerformLoginSteps()
     {
         try
         {
             Console.Write("Enter username > ");
-            IWebElement usernameField = Driver.FindElement(By.XPath(XPathConstants.UsernameField));
+            IWebElement usernameField = WebDriver.FindElement(By.XPath(XPathConstants.UsernameField));
             SendKeys(usernameField, Console.ReadLine() ?? string.Empty);
 
             Console.Write("Enter password > ");
-            IWebElement passwordField = Driver.FindElement(By.XPath(XPathConstants.PasswordField));
+            IWebElement passwordField = WebDriver.FindElement(By.XPath(XPathConstants.PasswordField));
             SendKeys(passwordField, PasswordExtension.ReadPassword() ?? string.Empty);
 
-            Driver.FindElement(By.XPath(XPathConstants.SubmitButton)).Submit();
+            WebDriver.FindElement(By.XPath(XPathConstants.SubmitButton)).Submit();
         }
         catch (Exception ex)
         {
@@ -46,20 +72,17 @@ public class SeleniumAutomation : LoginAutomation
         }
     }
 
-    // STEP #3
-    protected override void HandleLoginOutcome()
+    protected virtual void HandleLoginOutcome()
     {
         try
         {
-            // Wait until any of the conditions are met: error banner, 2FA prompt, or 'onetap' URL
-            Task waitForConditionTask = WaitForAnyConditionAsync(Driver);
+            Task waitForConditionTask = WaitForAnyConditionAsync(WebDriver);
             waitForConditionTask.Wait();
 
             Task.WhenAll(
-            [
-                Task.Run(HandleLoginError),                // Check for login errors
-                Task.Run(HandleTwoFactorAuthentication)    // Handle two-factor authentication
-            ]).Wait();
+                Task.Run(HandleLoginError),
+                Task.Run(HandleTwoFactorAuthentication)
+            ).Wait();
 
             "You successfully logged in.\n".WriteMessage(MessageType.Success);
         }
@@ -73,23 +96,21 @@ public class SeleniumAutomation : LoginAutomation
         }
     }
 
-    // STEP #3 - sub method
-    private Task WaitForAnyConditionAsync(IWebDriver webDriver)
+    private Task WaitForAnyConditionAsync(IWebDriver webWebDriver)
     {
         CancellationTokenSource cts = new CancellationTokenSource();
         CancellationToken token = cts.Token;
 
-        Task onetapTask = Task.Run(() => WaitForCondition(() => webDriver.Url.Contains("accounts/onetap/?next=%2F"), token), token);
-        Task twoFactorTask = Task.Run(() => WaitForCondition(() => webDriver.Url.Contains("accounts/login/two_factor?next=%2F"), token), token);
+        Task onetapTask = Task.Run(() => WaitForCondition(() => webWebDriver.Url.Contains("accounts/onetap/?next=%2F"), token), token);
+        Task twoFactorTask = Task.Run(() => WaitForCondition(() => webWebDriver.Url.Contains("accounts/login/two_factor?next=%2F"), token), token);
         Task incorrectPasswordTask = Task.Run(() =>
         {
             return WaitForCondition(() =>
             {
-                var webElement = webDriver.FindWebElement(
+                var webElement = webWebDriver.FindWebElement(
                     By.XPath(XPathConstants.PasswordIncorrectLabel),
                     WebElementPriorityType.Medium
-                    );
-
+                );
                 return webElement != null;
             }, token);
         }, token);
@@ -100,7 +121,6 @@ public class SeleniumAutomation : LoginAutomation
         return Task.CompletedTask;
     }
 
-    // STEP #3 - sub method
     private Task WaitForCondition(Func<bool> condition, CancellationToken cancellationToken)
     {
         if (condition == null)
@@ -126,24 +146,22 @@ public class SeleniumAutomation : LoginAutomation
         return Task.FromCanceled(cancellationToken);
     }
 
-    // STEP #3 - sub method
     private Task HandleLoginError()
     {
         return Task.Run(() =>
         {
-            if (ErrorMessageConstants.ErrorBanner(Driver) is LoginOutcome errorOutcome && errorOutcome != LoginOutcome.Empty)
+            if (ErrorMessageConstants.ErrorBanner(WebDriver) is LoginOutcome errorOutcome && errorOutcome != LoginOutcome.Empty)
             {
                 throw new LoginException(ErrorMessageConstants.IncorrectPasswordMessage);
             }
         });
     }
 
-    // STEP #3 - sub method
     private Task HandleTwoFactorAuthentication()
     {
         return Task.Run(() =>
         {
-            if (TwoFactorAuthConstants.VerificationCodeField(Driver) is LoginOutcome twoFactorOutcome && twoFactorOutcome != LoginOutcome.Empty)
+            if (TwoFactorAuthConstants.VerificationCodeField(WebDriver) is LoginOutcome twoFactorOutcome && twoFactorOutcome != LoginOutcome.Empty)
             {
                 if (twoFactorOutcome.Data is IWebElement webElement)
                 {
@@ -156,10 +174,9 @@ public class SeleniumAutomation : LoginAutomation
         });
     }
 
-    // STEP #4
-    protected override void SaveInfo()
+    protected virtual void SaveInfo()
     {
-        IWebElement? webElement = Driver.FindWebElement(
+        IWebElement? webElement = WebDriver.FindWebElement(
                By.XPath(XPathConstants.SaveInfoButton),
                WebElementPriorityType.Medium
                );
@@ -172,5 +189,15 @@ public class SeleniumAutomation : LoginAutomation
         {
             throw new LoginException($"An error occurred while saving information.");
         }
+    }
+
+    protected void SendKeys(IWebElement webElement, string data)
+    {
+        if (string.IsNullOrEmpty(webElement.Text) && webElement.Enabled)
+        {
+            webElement.Clear();
+        }
+
+        webElement.SendKeys(data);
     }
 }

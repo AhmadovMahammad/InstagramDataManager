@@ -33,10 +33,9 @@ internal class Program
             CreateFolderIfNeeded();
             RunApplication();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"An error occurred: {ex.Message}");
-            Console.WriteLine("Press any key to exit...");
+            Console.WriteLine($"An error occurred. Press any key to exit...");
             Console.ReadKey();
         }
         finally
