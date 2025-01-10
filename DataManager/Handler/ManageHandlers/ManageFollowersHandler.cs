@@ -2,21 +2,16 @@
 using DataManager.Constant.Enums;
 using DataManager.DesignPattern.Builder;
 using DataManager.Helper.Extension;
+using DataManager.Helper.Utility;
 using DataManager.Model;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
-using System.Diagnostics;
 using System.Text.Json;
 
 namespace DataManager.Handler.ManageHandlers;
 
 public class ManageFollowersHandler : BaseCommandHandler
 {
-    private const string UsernameXPath = "//span[@class='_ap3a _aaco _aacw _aacx _aad7 _aade' and @dir='auto']";
-    private const string FollowButtonXPath = "//div[@dir='auto' and normalize-space(text())='Follow']";
-    private const string NotAvailableNotificationXPath = "//a[@role='link' and normalize-space(text()) = 'Go back to Instagram.']";
-    private const string ScrollbarXPath = "//div[contains(@class,'xyi19xy x1ccrb07 xtf3nb5 x1pc53ja x1lliihq x1iyjqo2 xs83m0k xz65tgg x1rife3k x1n2onr6')]";
-
     private string _username = string.Empty;
     private int _followersCount = 0;
     private int _followingCount = 0;
@@ -25,8 +20,7 @@ public class ManageFollowersHandler : BaseCommandHandler
 
     protected override void Execute(Dictionary<string, object> parameters)
     {
-        if (!parameters.TryGetValue("WebDriver", out var webDriverObj) || webDriverObj is not IWebDriver webDriver)
-            throw new ArgumentException("WebDriver is missing or invalid in parameters.");
+        IWebDriver webDriver = parameters.Parse<IWebDriver>("WebDriver");
 
         _username = AskForUsername();
         if (string.IsNullOrWhiteSpace(_username)) return;
@@ -99,7 +93,7 @@ public class ManageFollowersHandler : BaseCommandHandler
             webDriver.Navigate().GoToUrl(url);
             WebDriverExtension.EnsureDomLoaded(webDriver);
 
-            var notAvailableNotification = webDriver.FindWebElement(By.XPath(NotAvailableNotificationXPath), WebElementPriorityType.Low);
+            var notAvailableNotification = webDriver.FindWebElement(By.XPath(XPathConstants.NotAvailableNotification), WebElementPriorityType.Low);
             return notAvailableNotification is null;
         }
         catch (Exception ex)
@@ -113,7 +107,7 @@ public class ManageFollowersHandler : BaseCommandHandler
     {
         try
         {
-            var followButton = webDriver.FindWebElement(By.XPath(FollowButtonXPath), WebElementPriorityType.Low);
+            var followButton = webDriver.FindWebElement(By.XPath(XPathConstants.FollowButton), WebElementPriorityType.Low);
             return followButton == null;
         }
         catch
@@ -183,91 +177,39 @@ public class ManageFollowersHandler : BaseCommandHandler
 
         try
         {
-            var modalButton = webDriver.FindWebElement(By.XPath(itemXPath), WebElementPriorityType.Low);
-            modalButton?.Click();
-
-            var wait = new WebDriverWait(webDriver, TimeSpan.FromSeconds(10));
-            while (listItems.Count < totalCount)
-            {
-                wait.Until(driver =>
-                {
-                    var currentElements = driver.FindElements(By.XPath(UsernameXPath));
-                    var newText = currentElements.Select(e => e.Text.Trim()).ToHashSet();
-                    var previousText = listItems.Select(e => e.Username).ToHashSet();
-                    return newText.Except(previousText).Any();
-                });
-
-                var currentElements = webDriver.FindElements(By.XPath(UsernameXPath));
-                foreach (var element in currentElements)
-                {
-                    string username = element.Text.Trim();
-                    listItems.Add(new UserEntry(id++, username));
-                }
-
-                var lastElement = currentElements.LastOrDefault();
-                if (lastElement != null)
-                {
-                    webDriver.ScrollToElement(lastElement);
-                    Task.Delay(1000).Wait();
-                }
-                else
-                {
-                    break;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            ex.LogException($"Error occurred while fetching {action} list.");
-        }
-        finally
-        {
-            webDriver.Navigate().Refresh();
-        }
-
-        return listItems;
-    }
-
-    // TODO: Scroll it with max height, do not use scroll step 150 as default value [extension]
-    private HashSet<UserEntry> FetchUserList_v2(IWebDriver webDriver, string itemXPath, int totalCount, string action)
-    {
-        var listItems = new HashSet<UserEntry>();
-        int id = 1;
-        IWebElement? scrollbarElement = null;
-
-        try
-        {
             var modalButton = webDriver.FindWebElement(By.XPath(itemXPath), WebElementPriorityType.Medium);
             if (modalButton == null) return listItems;
 
             modalButton.Click();
             webDriver.EnsureDomLoaded();
-            scrollbarElement = webDriver.FindWebElement(By.XPath(ScrollbarXPath), WebElementPriorityType.Low);
 
-            var wait = new WebDriverWait(webDriver, TimeSpan.FromSeconds(10));
+            var scrollbarElement = webDriver.FindWebElement(By.XPath(XPathConstants.Scrollbar), WebElementPriorityType.Low);
+            if (scrollbarElement == null) return listItems;
+
+            var wait = new WebDriverWait(webDriver, AppConstant.ExplicitWait);
+            wait.IgnoreExceptionTypes(typeof(WebDriverTimeoutException));
+
             while (listItems.Count < totalCount)
             {
-                wait.Until(driver =>
+                try
                 {
-                    var currentElements = driver.FindElements(By.XPath(UsernameXPath));
+                    wait.Until(driver =>
+                    {
+                        var currentElements = driver.FindElements(By.XPath(XPathConstants.ManagableUsername));
+                        return currentElements.Count != 0;
+                    });
+                }
+                catch (WebDriverTimeoutException)
+                {
+                }
 
-                    var newText = currentElements.Select(e => e.Text.Trim()).ToHashSet();
-                    var previousText = listItems.Select(e => e.Username).ToHashSet();
-
-                    return newText.Except(previousText).Any();
-                });
-
-                var currentElements = webDriver.FindElements(By.XPath(UsernameXPath));
+                var currentElements = webDriver.FindElements(By.XPath(XPathConstants.ManagableUsername));
                 AddUniqueUsernames(currentElements, listItems, ref id);
 
-                if (scrollbarElement != null)
+                if (listItems.Count < totalCount)
                 {
-                    webDriver.ScrollToBottom(scrollbarElement);
-                    Thread.Sleep(1000);
-                }
-                else
-                {
-                    break;
+                    webDriver.ScrollToBottom(scrollbarElement, 200);
+                    Thread.Sleep(500);
                 }
             }
         }
@@ -309,26 +251,22 @@ public class ManageFollowersHandler : BaseCommandHandler
             if (File.Exists(filePath))
             {
                 var previousData = LoadUserData(filePath);
-                if (previousData != null)
-                {
-                    AnalyzeAndDisplayChanges(currentData, previousData);
-                }
-                else
+                if (previousData == null)
                 {
                     "Failed to load previous data.".WriteMessage(MessageType.Error);
+                    return;
                 }
+
+                AnalyzeAndDisplayChanges(currentData, previousData);
             }
             else
             {
                 "File not found.".WriteMessage(MessageType.Error);
             }
         }
-        else
+        else if (TrySaveUserData(currentData, out string fileName))
         {
-            if (TrySaveUserData(currentData, out string fileName))
-            {
-                $"Current followers data saved to {fileName}.".WriteMessage(MessageType.Success);
-            }
+            $"Current followers data saved to {fileName}.".WriteMessage(MessageType.Success);
         }
     }
 

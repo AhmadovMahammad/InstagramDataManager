@@ -1,4 +1,5 @@
 ﻿using ConsoleTables;
+using DataManager.Constant;
 using DataManager.Constant.Enums;
 using DataManager.DesignPattern.Builder;
 using DataManager.DesignPattern.Strategy;
@@ -10,9 +11,6 @@ using OpenQA.Selenium;
 namespace DataManager.Handler.ManageHandlers;
 public class ManageRecentFollowRequestsHandler() : BaseCommandHandler
 {
-    private const string PendingButtonXPath = "//button[contains(@class,'_acan') and ..//div[text()='Requested']]";
-    private const string UnfollowButtonXPath = "//button[contains(@class, '_a9-- _ap36 _a9-_') and normalize-space(text())='Unfollow']";
-
     private int _unfollowedCount = 0;
     private int _notAcceptedCount = 0;
 
@@ -85,14 +83,14 @@ public class ManageRecentFollowRequestsHandler() : BaseCommandHandler
             webDriver.Navigate().GoToUrl(href);
             WebDriverExtension.EnsureDomLoaded(webDriver);
 
-            IWebElement? requestedButton = webDriver.FindWebElement(By.XPath(PendingButtonXPath), WebElementPriorityType.Medium);
+            IWebElement? requestedButton = webDriver.FindWebElement(By.XPath(XPathConstants.RequestedButton), WebElementPriorityType.Medium);
             if (requestedButton == null)
             {
                 return false;
             }
             requestedButton.Click();
 
-            IWebElement? unfollowButton = webDriver.FindWebElement(By.XPath(UnfollowButtonXPath), WebElementPriorityType.Medium);
+            IWebElement? unfollowButton = webDriver.FindWebElement(By.XPath(XPathConstants.UnfollowButton), WebElementPriorityType.Medium);
             if (unfollowButton == null)
             {
                 $"'Unfollow' button not found on the page.".WriteMessage(MessageType.Error);

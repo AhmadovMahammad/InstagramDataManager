@@ -54,10 +54,11 @@ public static class WebDriverExtension
         WaitForElementVisible(webDriver, webElement);
     }
 
-    public static void ScrollToBottom(this IWebDriver webDriver, IWebElement webElement, int scrollStep = 150)
+    public static void ScrollToBottom(this IWebDriver webDriver, IWebElement webElement, int pixels = 200)
     {
-        ((IJavaScriptExecutor)webDriver).ExecuteScript(
-            "arguments[0].scrollTop += arguments[1];", webElement, scrollStep);
+        var jsExecutor = (IJavaScriptExecutor)webDriver;
+        jsExecutor.ExecuteScript(
+            "arguments[0].scrollTop += arguments[1];", webElement, pixels);
     }
 
     public static void WaitForElementVisible(this IWebDriver webDriver, IWebElement webElement, int timeoutSeconds = 10)
@@ -66,6 +67,5 @@ public static class WebDriverExtension
             .Until(d => webElement.Displayed);
     }
 
-    // get IWebDriver by using IWebElement
     public static IWebDriver GetWebDriver(this IWebElement webElement) => ((IWrapsDriver)webElement).WrappedDriver;
 }

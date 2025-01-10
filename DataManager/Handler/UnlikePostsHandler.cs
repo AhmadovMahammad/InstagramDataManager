@@ -1,18 +1,14 @@
 using DataManager.Constant;
 using DataManager.Constant.Enums;
 using DataManager.DesignPattern.Builder;
-using DataManager.Handler;
 using DataManager.Helper.Extension;
 using DataManager.Helper.Utility;
 using OpenQA.Selenium;
 
+namespace DataManager.Handler;
 public class UnlikePostsHandler : BaseCommandHandler
 {
-    private const string OperationPath = "https://www.instagram.com/your_activity/interactions/likes/";
-    private const string PostXPath = "//img[@data-bloks-name='bk.components.Image']";
-    private const string UnlikeButtonXPath = "//*[name()='svg' and @role='img' and (@aria-label='Unlike' or @aria-label='Like') and (contains(@class, 'xyb1xck') or contains(@class, 'xxk16z8'))]";
-    private const string ErrorRefreshImageSource = "https://i.instagram.com/static/images/bloks/assets/ig_illustrations/illo_error_refresh-4x-dark.png/02ffe4dfdf20.png";
-    private static readonly string ErrorRefreshImageXPath = $"//img[@data-bloks-name='bk.components.Image' and @src='{ErrorRefreshImageSource}']";
+    private const string _operationPath = "https://www.instagram.com/your_activity/interactions/likes/";
 
     private readonly Dictionary<string, int> _visitedPosts = [];
     private readonly HashSet<string> _blackList = [];
@@ -26,7 +22,7 @@ public class UnlikePostsHandler : BaseCommandHandler
 
         var taskBuilder = new SeleniumTaskBuilder(webDriver);
         taskBuilder
-            .NavigateTo(OperationPath)
+            .NavigateTo(_operationPath)
             .PerformAction(HandlePosts)
             .ExecuteTasks();
     }
@@ -36,7 +32,7 @@ public class UnlikePostsHandler : BaseCommandHandler
         "Starting the process of unliking posts...".WriteMessage(MessageType.Info);
 
         // First, look for ErrorRefreshImageXPath; if it's present, you haven't liked any postings.
-        IWebElement? webElement = webDriver.FindWebElement(By.XPath(ErrorRefreshImageXPath), WebElementPriorityType.Low);
+        IWebElement? webElement = webDriver.FindWebElement(By.XPath(XPathConstants.ErrorRefreshImageXPath), WebElementPriorityType.Low);
         if (webElement != null)
         {
             "You haven’t liked anything. Exiting...".WriteMessage(MessageType.Warning);
@@ -45,7 +41,7 @@ public class UnlikePostsHandler : BaseCommandHandler
 
         while (true)
         {
-            WebDriverExtension.EnsureDomLoaded(webDriver);
+            webDriver.EnsureDomLoaded();
 
             try
             {
@@ -73,7 +69,7 @@ public class UnlikePostsHandler : BaseCommandHandler
 
     private PostProcessType TryProcessNextPost(IWebDriver webDriver)
     {
-        By by = By.XPath(PostXPath);
+        By by = By.XPath(XPathConstants.PostImage);
         string sourceValue = string.Empty;
         IWebElement? webElement = null;
 
@@ -97,7 +93,7 @@ public class UnlikePostsHandler : BaseCommandHandler
                 if (webElement != null)
                 {
                     sourceValue = webElement.GetDomAttribute("src");
-                    if (sourceValue == ErrorRefreshImageSource)
+                    if (sourceValue == XPathConstants.ErrorRefreshImageSource)
                     {
                         return PostProcessType.NoMorePosts;
                     }
@@ -161,9 +157,9 @@ public class UnlikePostsHandler : BaseCommandHandler
         try
         {
             webElement.Click();
-            WebDriverExtension.EnsureDomLoaded(webDriver);
+            webDriver.EnsureDomLoaded();
 
-            IWebElement? iconElement = webDriver.FindWebElement(By.XPath(UnlikeButtonXPath), WebElementPriorityType.Medium);
+            IWebElement? iconElement = webDriver.FindWebElement(By.XPath(XPathConstants.UnlikeButton), WebElementPriorityType.Medium);
             if (iconElement != null)
             {
                 string ariaLabel = iconElement.GetDomAttribute("aria-label");
@@ -188,7 +184,7 @@ public class UnlikePostsHandler : BaseCommandHandler
         finally
         {
             webDriver.Navigate().Back();
-            WebDriverExtension.EnsureDomLoaded(webDriver);
+            webDriver.EnsureDomLoaded();
         }
     }
 }

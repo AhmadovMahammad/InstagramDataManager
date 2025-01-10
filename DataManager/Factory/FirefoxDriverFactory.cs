@@ -12,7 +12,6 @@ public class FirefoxDriverFactory
 
     public static IWebDriver CreateDriver(IChainHandler validationChain)
     {
-        Console.WriteLine("\n"); // Firefox options are separated from the application menu using the Line Feed (LF). 
         _validationChain = validationChain;
 
         var webDriver = new FirefoxDriver(GetFirefoxOptions());
@@ -23,19 +22,29 @@ public class FirefoxDriverFactory
 
     private static FirefoxOptions? GetFirefoxOptions()
     {
-        FirefoxOptions defaultOptions = new FirefoxOptions()
+        FirefoxOptions firefoxOptions = new FirefoxOptions()
         {
             BinaryLocation = GetFirefoxExecutablePath(),
             LogLevel = FirefoxDriverLogLevel.Fatal,
         };
 
-        // load settings dynamically.
         if (!File.Exists(_settingsPath))
         {
-            return defaultOptions;
+            return firefoxOptions;
         }
 
-        XmlReaderSettings xmlReaderSettings = new() { IgnoreWhitespace = true, IgnoreComments = true };
+        ReadSettings(ref firefoxOptions);
+        return firefoxOptions;
+    }
+
+    private static void ReadSettings(ref FirefoxOptions defaultOptions)
+    {
+        XmlReaderSettings xmlReaderSettings = new()
+        {
+            IgnoreWhitespace = true,
+            IgnoreComments = true
+        };
+
         using FileStream fileStream = new FileStream(_settingsPath, FileMode.Open, FileAccess.Read);
         using XmlReader xmlReader = XmlReader.Create(fileStream, xmlReaderSettings);
 
@@ -73,8 +82,6 @@ public class FirefoxDriverFactory
                 }
             }
         }
-
-        return defaultOptions;
     }
 
     private static string GetFirefoxExecutablePath()

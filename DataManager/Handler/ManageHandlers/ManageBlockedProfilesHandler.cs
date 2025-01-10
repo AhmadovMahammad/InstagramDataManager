@@ -9,8 +9,6 @@ using OpenQA.Selenium;
 namespace DataManager.Handler.ManageHandlers;
 public class ManageBlockedProfilesHandler() : BaseCommandHandler
 {
-    private const string UnblockXPath = "//button[contains(@class, '_acan') and contains(@class, '_acap')//div[contains(text(), 'Unblock')]";
-
     public override OperationType OperationType => OperationType.Hybrid;
 
     protected override void Execute(Dictionary<string, object> parameters)

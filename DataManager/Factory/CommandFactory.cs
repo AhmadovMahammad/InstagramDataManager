@@ -1,4 +1,5 @@
 ﻿using DataManager.Constant.Enums;
+using DataManager.Handler;
 using DataManager.Handler.ManageHandlers;
 using OpenQA.Selenium;
 
@@ -14,6 +15,7 @@ public static class CommandFactory
     {
         return commandType switch
         {
+            // todo: merge 'manage recent/pending follow requests'
             CommandType.Manage_Recent_Follow_Requests => new ManageRecentFollowRequestsHandler(),
             CommandType.Manage_Received_Requests => new ManageReceivedRequestsHandler(),
             CommandType.Manage_Blocked_Profiles => new ManageBlockedProfilesHandler(),

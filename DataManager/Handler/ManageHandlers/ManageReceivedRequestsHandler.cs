@@ -1,4 +1,5 @@
-﻿using DataManager.Constant.Enums;
+﻿using DataManager.Constant;
+using DataManager.Constant.Enums;
 using DataManager.Helper.Extension;
 using DataManager.Helper.Utility;
 using OpenQA.Selenium;
@@ -8,9 +9,6 @@ namespace DataManager.Handler.ManageHandlers;
 
 public class ManageReceivedRequestsHandler() : BaseCommandHandler
 {
-    private const string NotificationsSidebarButtonXPath = "//*[name()='svg' and @aria-label='Notifications']";
-    private const string ExpandNotificationsButtonXPath = "//*[name()='svg' and @aria-label='' and contains(@class, 'x1lliihq x1n2onr6 x1roi4f4')]";
-
     public override OperationType OperationType => OperationType.SeleniumBased;
 
     protected override void Execute(Dictionary<string, object> parameters)
@@ -43,11 +41,17 @@ public class ManageReceivedRequestsHandler() : BaseCommandHandler
 
         try
         {
-            IWebElement? notificationSidebarElement = webDriver.FindWebElement(By.XPath(NotificationsSidebarButtonXPath), WebElementPriorityType.Low);
+            IWebElement? notificationSidebarElement = webDriver.FindWebElement(
+                By.XPath(XPathConstants.NotificationsSidebarButton),
+                WebElementPriorityType.Low);
+
             if (notificationSidebarElement != null)
             {
                 notificationSidebarElement.Click();
-                IWebElement? expandNotificationsButton = webDriver.FindWebElement(By.XPath(ExpandNotificationsButtonXPath), WebElementPriorityType.Low);
+
+                IWebElement? expandNotificationsButton = webDriver.FindWebElement(
+                    By.XPath(XPathConstants.ExpandNotificationsButton),
+                    WebElementPriorityType.Low);
 
                 if (expandNotificationsButton != null)
                 {

@@ -9,10 +9,6 @@ using OpenQA.Selenium;
 namespace DataManager.Automation;
 public class SeleniumAutomation : LoginAutomation
 {
-    // TODO: Save all XPath information into one class.
-    private const string SaveInfoXPath = "//button[text()='Save info' and contains(@class,'_acan _acap _acas _aj1- _ap30')]";
-
-    // Overridden methods
     protected override IWebDriver InitializeDriver() => FirefoxDriverFactory.CreateDriver(_validationChain);
 
     // STEP #1
@@ -35,14 +31,14 @@ public class SeleniumAutomation : LoginAutomation
         try
         {
             Console.Write("Enter username > ");
-            IWebElement usernameField = Driver.FindElement(By.XPath("//input[@name='username']"));
+            IWebElement usernameField = Driver.FindElement(By.XPath(XPathConstants.UsernameField));
             SendKeys(usernameField, Console.ReadLine() ?? string.Empty);
 
             Console.Write("Enter password > ");
-            IWebElement passwordField = Driver.FindElement(By.XPath("//input[@name='password']"));
+            IWebElement passwordField = Driver.FindElement(By.XPath(XPathConstants.PasswordField));
             SendKeys(passwordField, PasswordExtension.ReadPassword() ?? string.Empty);
 
-            Driver.FindElement(By.XPath("//button[@type='submit']")).Submit();
+            Driver.FindElement(By.XPath(XPathConstants.SubmitButton)).Submit();
         }
         catch (Exception ex)
         {
@@ -90,7 +86,7 @@ public class SeleniumAutomation : LoginAutomation
             return WaitForCondition(() =>
             {
                 var webElement = webDriver.FindWebElement(
-                    By.XPath("//div[contains(text(),'your password was incorrect')]"),
+                    By.XPath(XPathConstants.PasswordIncorrectLabel),
                     WebElementPriorityType.Medium
                     );
 
@@ -164,7 +160,7 @@ public class SeleniumAutomation : LoginAutomation
     protected override void SaveInfo()
     {
         IWebElement? webElement = Driver.FindWebElement(
-               By.XPath(SaveInfoXPath),
+               By.XPath(XPathConstants.SaveInfoButton),
                WebElementPriorityType.Medium
                );
 
