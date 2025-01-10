@@ -1,8 +1,8 @@
 ﻿using DataManager.Model;
 using OpenQA.Selenium;
 
-namespace DataManager;
-public class Delegates
+namespace DataManager.Core.Delegates;
+public class LoginDelegates
 {
     public delegate LoginOutcome ConditionDelegate(IWebDriver webDriver);
 }

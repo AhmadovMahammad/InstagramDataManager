@@ -1,10 +1,11 @@
 ﻿using DataManager.Constant;
 using DataManager.Constant.Enums;
+using DataManager.Core;
 using DataManager.Helper.Extension;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace DataManager.Core;
+namespace DataManager;
 internal class Program
 {
     private static IHost _host = null!;
@@ -51,7 +52,7 @@ internal class Program
         if (!Directory.Exists(path))
         {
             Directory.CreateDirectory(path);
-            ConsoleExtension.WriteMessage($"Path will contain several important files: {path}. You can obtain data from there if you need it.", MessageType.Success);
+            $"Path will contain several important files: {path}. You can obtain data from there if you need it.".WriteMessage(MessageType.Success);
         }
     }
 

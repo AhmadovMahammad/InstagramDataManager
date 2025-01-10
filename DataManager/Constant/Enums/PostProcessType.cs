@@ -3,7 +3,6 @@ public enum PostProcessType
 {
     Success,
     NoMorePosts,
-    //AlreadyVisited,
     MaxRetryLimitReached,
     Error,
 }

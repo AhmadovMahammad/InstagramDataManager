@@ -2,7 +2,7 @@
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 using SeleniumExtras.WaitHelpers;
-using static DataManager.Delegates;
+using static DataManager.Core.Delegates.LoginDelegates;
 
 namespace DataManager.Constant;
 public static class ErrorMessageConstants
