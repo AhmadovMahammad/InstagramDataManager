@@ -1,13 +1,12 @@
 ﻿using DataManager.Constant.Enums;
-using DataManager.DesignPattern.Builder;
 using DataManager.DesignPattern.Strategy;
 using DataManager.Helper.Extension;
 using DataManager.Helper.Utility;
 using DataManager.Models.JsonModels;
 using OpenQA.Selenium;
 
-namespace DataManager.Handler.ManageHandlers;
-public class ManageBlockedProfilesHandler() : BaseCommandHandler
+namespace DataManager.Tasks;
+public class ManageCloseFriends() : BaseTaskHandler
 {
     public override OperationType OperationType => OperationType.Hybrid;
 
@@ -17,7 +16,7 @@ public class ManageBlockedProfilesHandler() : BaseCommandHandler
         IFileFormatStrategy strategy = parameters.Parse<IFileFormatStrategy>("FileFormatStrategy");
         IWebDriver webDriver = parameters.Parse<IWebDriver>("WebDriver");
 
-        ManageData(strategy.ProcessFile(filePath, "relationships_blocked_users"), webDriver);
+        ManageData(strategy.ProcessFile(filePath, "relationships_close_friends"), webDriver);
     }
 
     private void ManageData(IEnumerable<RelationshipData> data, IWebDriver webDriver)
@@ -30,13 +29,14 @@ public class ManageBlockedProfilesHandler() : BaseCommandHandler
 
         $"{data.Count()} entries found for processing.".WriteMessage(MessageType.Info);
 
-        if (!"Do you want to unblock the listed profiles? (y/n)".AskToProceed())
-        {
-            "Operation cancelled by user.".WriteMessage(MessageType.Info);
-            return;
-        }
+        // TODO: complete implementation.
+        //if (!"Do you want to remove the listed profiles from close friends? (y/n)".AskToProceed())
+        //{
+        //    "Operation cancelled by user.".WriteMessage(MessageType.Info);
+        //    return;
+        //}
 
-        // Build and execute tasks
-        var taskBuilder = new SeleniumTaskBuilder(webDriver);
+        //// Build and execute tasks
+        //var taskBuilder = new SeleniumTaskBuilder(webDriver);
     }
 }

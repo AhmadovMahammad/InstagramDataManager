@@ -9,7 +9,7 @@ internal static class Startup
     {
         services.AddSingleton<ApplicationRunner>();
 
-        services.AddSingleton<ICommandHandler, CommandHandler>();
+        services.AddSingleton<ICommandResolver, CommandResolver>();
         services.AddSingleton<ILoginService, LoginService>();
     }
 }

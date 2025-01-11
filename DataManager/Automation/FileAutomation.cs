@@ -1,5 +1,6 @@
 ﻿using DataManager.DesignPattern.ChainOfResponsibility;
 using DataManager.DesignPattern.Strategy;
+using DataManager.Helper.Extension;
 
 namespace DataManager.Automation;
 public class FileAutomation
@@ -15,7 +16,8 @@ public class FileAutomation
 
     public (string filePath, IFileFormatStrategy? strategy) GetParams()
     {
-        string filePath = GetFilePath();
+        // Prompt for file path
+        string filePath = "Enter the file path to proceed".GetInput();
 
         if (_validationChain.Handle(filePath))
         {
@@ -24,15 +26,6 @@ public class FileAutomation
         }
 
         return (string.Empty, null);
-    }
-
-    // Prompt for file path
-    private string GetFilePath()
-    {
-        Console.WriteLine("Enter the file path to proceed");
-        Console.Write("> ");
-
-        return Console.ReadLine() ?? string.Empty;
     }
 
     // Get file format strategy based on file extension

@@ -5,13 +5,13 @@ using DataManager.Factory;
 using DataManager.Helper.Extension;
 using OpenQA.Selenium;
 
-namespace DataManager.Handler;
-public abstract class BaseCommandHandler : ICommandHandler
+namespace DataManager.Tasks;
+public abstract class BaseTaskHandler : ITaskHandler
 {
     public abstract OperationType OperationType { get; }
     protected abstract void Execute(Dictionary<string, object> parameters);
 
-    public void HandleCommand(IWebDriver webDriver)
+    public void HandleTask(IWebDriver webDriver)
     {
         if (webDriver is null)
             throw new ArgumentNullException(nameof(webDriver), "WebDriver cannot be null.");
@@ -37,11 +37,6 @@ public abstract class BaseCommandHandler : ICommandHandler
 
             Execute(defaultParameters);
         }
-        catch (InvalidOperationException ex)
-        {
-            ex.LogException("Invalid operation during command execution.");
-            throw;
-        }
         catch (Exception ex)
         {
             ex.LogException("Unexpected error during command execution.");
@@ -58,11 +53,13 @@ public abstract class BaseCommandHandler : ICommandHandler
                 var automation = new FileAutomation();
                 (string filePath, IFileFormatStrategy? strategy) = automation.GetParams();
 
-                return new Dictionary<string, object>
-                {
-                    { "FilePath", filePath },
-                    { "FileFormatStrategy", strategy ?? new JsonFileFormatStrategy() }
-                };
+                return string.IsNullOrEmpty(filePath)
+                    ? null
+                    : new Dictionary<string, object>
+                    {
+                        { "FilePath", filePath },
+                        { "FileFormatStrategy", strategy ?? new JsonFileFormatStrategy() }
+                    };
             }
             catch (Exception ex)
             {

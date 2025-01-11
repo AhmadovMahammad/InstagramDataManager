@@ -8,9 +8,8 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 using System.Text.Json;
 
-namespace DataManager.Handler.ManageHandlers;
-
-public class ManageFollowersHandler : BaseCommandHandler
+namespace DataManager.Tasks;
+public class ManageFollowers : BaseTaskHandler
 {
     private string _username = string.Empty;
     private int _followersCount = 0;
@@ -29,7 +28,7 @@ public class ManageFollowersHandler : BaseCommandHandler
 
         var taskBuilder = new SeleniumTaskBuilder(webDriver);
         taskBuilder
-            .PerformAction(d => ValidateInput(webDriver, out success))
+            .PerformAction(d => ValidateInput(d, out success))
             .PerformAction(d =>
             {
                 if (success)
@@ -43,10 +42,7 @@ public class ManageFollowersHandler : BaseCommandHandler
     {
         while (true)
         {
-            Console.WriteLine("\nEnter the Username to process (or type 'exit' to quit):");
-            Console.Write("> ");
-            _username = Console.ReadLine()?.Trim() ?? string.Empty;
-
+            _username = "Enter the Username to process (or type 'exit' to quit)".GetInput();
             if (string.IsNullOrWhiteSpace(_username) || _username.Equals("exit", StringComparison.OrdinalIgnoreCase))
             {
                 "Operation cancelled by user.".WriteMessage(MessageType.Warning);
@@ -91,7 +87,7 @@ public class ManageFollowersHandler : BaseCommandHandler
         {
             string url = $"https://www.instagram.com/{username}";
             webDriver.Navigate().GoToUrl(url);
-            WebDriverExtension.EnsureDomLoaded(webDriver);
+            webDriver.EnsureDomLoaded();
 
             var notAvailableNotification = webDriver.FindWebElement(By.XPath(XPathConstants.NotAvailableNotification), WebElementPriorityType.Low);
             return notAvailableNotification is null;
@@ -170,6 +166,7 @@ public class ManageFollowersHandler : BaseCommandHandler
         }
     }
 
+    // TODO: Fetch users from api.
     private HashSet<UserEntry> FetchUserList(IWebDriver webDriver, string itemXPath, int totalCount, string action)
     {
         var listItems = new HashSet<UserEntry>();

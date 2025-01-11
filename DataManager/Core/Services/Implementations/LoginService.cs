@@ -1,15 +1,14 @@
-﻿using DataManager.Constant.Enums;
-using DataManager.Constant;
+﻿using DataManager.Constant;
+using DataManager.Constant.Enums;
 using DataManager.Core.Services.Contracts;
 using DataManager.DesignPattern.ChainOfResponsibility;
 using DataManager.Exceptions;
 using DataManager.Factory;
 using DataManager.Helper.Extension;
+using DataManager.Helper.Utility;
 using DataManager.Model;
 using OpenQA.Selenium;
 using System.Text.Json;
-using DataManager.Helper.Utility;
-using System.Reflection.PortableExecutable;
 
 namespace DataManager.Core.Services.Implementations;
 public class LoginService : ILoginService
@@ -61,22 +60,29 @@ public class LoginService : ILoginService
         }
     }
 
-    private void PerformLoginSteps()
+    private void PerformLoginSteps() // TODO: Errors may arise during login execution; if this happens, simply remove the file.
     {
+        bool hasNewCredentials = false;
+        bool errorOccurred = false;
+        (string username, string password) credentials = (string.Empty, string.Empty);
+
         try
         {
-            var credentials = GetUserCredentials(out bool hasNewCredentials);
+            credentials = GetUserCredentials(out hasNewCredentials);
             FillLoginForm(credentials);
             WebDriver.FindElement(By.XPath(XPathConstants.SubmitButton)).Submit();
-
-            if (hasNewCredentials)
-            {
-                SaveCredentials(credentials);
-            }
         }
         catch (Exception ex)
         {
+            errorOccurred = true;
             throw new LoginException($"Error during login steps: {ex.Message}");
+        }
+        finally
+        {
+            if (hasNewCredentials && !errorOccurred)
+            {
+                SaveCredentials(credentials);
+            }
         }
     }
 
@@ -87,17 +93,24 @@ public class LoginService : ILoginService
 
         if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
         {
-            Console.WriteLine("Previous credentials found. Press Enter to use them, or type new credentials to overwrite.");
+            "Previous credentials found. Press Enter to use them, or enter new credentials to overwrite.".WriteMessage(MessageType.Info);
 
-            username = $"Current username: {username}. Enter new username (or press Enter to keep): ".GetInput(username);
-            password = "Enter password (or press Enter to keep previous): ".GetPasswordInput(password);
+            string username_v2 = $"Username".GetInput(username);
+            string password_v2 = "Password".GetPasswordInput(password);
+
+            if (username != username_v2 || password != password_v2)
+            {
+                hasNewCredentials = true;
+                username = username_v2;
+                password = password_v2;
+            }
         }
         else
         {
             hasNewCredentials = true;
 
-            username = "Enter username > ".GetInput();
-            password = "Enter password > ".GetPasswordInput();
+            username = "Enter username".GetInput();
+            password = "Enter password".GetPasswordInput();
         }
 
         return (username, password);
@@ -134,46 +147,40 @@ public class LoginService : ILoginService
     {
         if (fileNames.Length == 0)
         {
-            "No saved credentials found.".WriteMessage(MessageType.Info);
             return string.Empty;
         }
 
         string selectedFile = string.Empty;
-        if (fileNames.Length == 1)
+        Console.WriteLine("Multiple credentials found. Please select one:");
+
+        for (int i = 0; i < fileNames.Length; i++)
         {
-            selectedFile = fileNames[0];
-        }
-        else
-        {
-            Console.WriteLine("Multiple credentials found. Please select one:");
-            for (int i = 0; i < fileNames.Length; i++)
-            {
-                string username = Path.GetFileNameWithoutExtension(fileNames[i]).Replace("backup_", "");
-                Console.WriteLine($"{i + 1}: {username}");
-            }
-
-            while (true)
-            {
-                Console.Write("Enter the number of the credential to use or type 'exit' to quit");
-                string? input = Console.ReadLine();
-
-                if (string.Equals(input, "exit", StringComparison.OrdinalIgnoreCase))
-                {
-                    break;
-                }
-
-                if (int.TryParse(input, out int choice) && choice > 0 && choice <= fileNames.Length)
-                {
-                    selectedFile = fileNames[choice - 1];
-                    break;
-                }
-
-                Console.WriteLine("Invalid selection. Please try again.");
-            }
+            string username = GetUsername(fileNames[i]);
+            Console.WriteLine($"{i + 1}: {username}");
         }
 
+        while (true)
+        {
+            string input = "\nEnter the number of the credential you want to use, or type 'exit' to enter new credentials.".GetInput();
+            if (string.Equals(input, "exit", StringComparison.OrdinalIgnoreCase))
+            {
+                break;
+            }
+
+            if (int.TryParse(input, out int choice) && choice > 0 && choice <= fileNames.Length)
+            {
+                selectedFile = fileNames[choice - 1];
+                break;
+            }
+
+            "Invalid selection. Please try again.".WriteMessage(MessageType.Error);
+        }
+
+        Console.WriteLine();
         return selectedFile;
     }
+
+    private string GetUsername(string filename) => Path.GetFileNameWithoutExtension(filename).Replace("backup_", "");
 
     private void FillLoginForm((string username, string password) credentials)
     {

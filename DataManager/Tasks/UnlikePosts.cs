@@ -5,8 +5,8 @@ using DataManager.Helper.Extension;
 using DataManager.Helper.Utility;
 using OpenQA.Selenium;
 
-namespace DataManager.Handler;
-public class UnlikePostsHandler : BaseCommandHandler
+namespace DataManager.Tasks;
+public class UnlikePosts : BaseTaskHandler
 {
     private const string _operationPath = "https://www.instagram.com/your_activity/interactions/likes/";
 
@@ -77,30 +77,29 @@ public class UnlikePostsHandler : BaseCommandHandler
         {
             // avoid prohibited posts:
             // Occasionally, Instagram posts that you like cannot be opened due to account blocking or other issues.
-            if (_blackList.Count != 0)
+            if (_blackList.Count > 0)
             {
-                var elements = webDriver.FindElements(by).Skip(_blackList.Count).ToList();
-                if (elements.Count <= _blackList.Count)
+                var elements = webDriver.FindElements(by)
+                                        .Skip(_blackList.Count)
+                                        .Where(webElement => webElement.GetDomAttribute("src") != XPathConstants.ErrorRefreshImageSource);
+
+                if (!elements.Skip(_blackList.Count).Any())
                 {
                     return PostProcessType.NoMorePosts;
                 }
 
-                webElement = elements.First();
+                webElement = elements.FirstOrDefault();
             }
-            else
+            else webElement = webDriver.FindWebElement(by, WebElementPriorityType.Low);
+
+            if (webElement == null) return PostProcessType.NoMorePosts;
+            sourceValue = webElement.GetDomAttribute("src");
+            
+            if (webElement.GetDomAttribute("src") == XPathConstants.ErrorRefreshImageSource)
             {
-                webElement = webDriver.FindWebElement(by, WebElementPriorityType.Medium);
-                if (webElement != null)
-                {
-                    sourceValue = webElement.GetDomAttribute("src");
-                    if (sourceValue == XPathConstants.ErrorRefreshImageSource)
-                    {
-                        return PostProcessType.NoMorePosts;
-                    }
-                }
+                return PostProcessType.NoMorePosts;
             }
 
-            if (webElement is null) return PostProcessType.NoMorePosts;
             if (TryAdd2Visited(webElement, sourceValue, out bool maxLimitReached))
             {
                 if (maxLimitReached)
@@ -159,6 +158,8 @@ public class UnlikePostsHandler : BaseCommandHandler
             webElement.Click();
             webDriver.EnsureDomLoaded();
 
+            // TODO: Check for error refresh image at first
+
             IWebElement? iconElement = webDriver.FindWebElement(By.XPath(XPathConstants.UnlikeButton), WebElementPriorityType.Medium);
             if (iconElement != null)
             {
@@ -184,7 +185,6 @@ public class UnlikePostsHandler : BaseCommandHandler
         finally
         {
             webDriver.Navigate().Back();
-            webDriver.EnsureDomLoaded();
         }
     }
 }

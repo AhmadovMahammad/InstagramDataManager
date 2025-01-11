@@ -5,9 +5,8 @@ using DataManager.Helper.Utility;
 using OpenQA.Selenium;
 using System.Collections.ObjectModel;
 
-namespace DataManager.Handler.ManageHandlers;
-
-public class ManageReceivedRequestsHandler() : BaseCommandHandler
+namespace DataManager.Tasks;
+public class ManageReceivedRequests() : BaseTaskHandler
 {
     public override OperationType OperationType => OperationType.SeleniumBased;
 
@@ -20,11 +19,9 @@ public class ManageReceivedRequestsHandler() : BaseCommandHandler
     private void ManageData(IWebDriver webDriver)
     {
         Console.WriteLine("\nYou can either confirm or delete all received requests.");
-        Console.WriteLine("Press 'c' to confirm all requests, or 'd' to delete all requests.");
-        Console.Write("> ");
 
-        string userInput = (Console.ReadLine()?.ToLower() ?? string.Empty).Trim();
-        Action<IWebDriver> action = userInput switch
+        string userInput = "Press 'c' to confirm all requests, or 'd' to delete all requests.".GetInput();
+        Action<IWebDriver> action = userInput.ToLowerInvariant() switch
         {
             "c" => ConfirmAllReceivedRequests,
             "d" => DeleteAllReceivedRequests,
@@ -37,7 +34,7 @@ public class ManageReceivedRequestsHandler() : BaseCommandHandler
     private void PerformActionOnRequests(IWebDriver webDriver, Action<IWebDriver> action)
     {
         "Starting the process of managing received requests...\n".WriteMessage(MessageType.Info);
-        WebDriverExtension.EnsureDomLoaded(webDriver);
+        webDriver.EnsureDomLoaded();
 
         try
         {
@@ -60,23 +57,23 @@ public class ManageReceivedRequestsHandler() : BaseCommandHandler
                 }
                 else
                 {
-                    Console.WriteLine("No expand button found, there might be no current requests to manage.");
+                    Console.WriteLine("No requests have been received as of yet.");
                 }
             }
         }
         catch (Exception ex)
         {
-            ex.LogException("Error during request management.");
+            ex.LogException("Error during received request management.");
         }
     }
 
     private void ConfirmAllReceivedRequests(IWebDriver webDriver)
     {
-        ReadOnlyCollection<IWebElement> confirmButtons = webDriver.FindElements(By.XPath("//div[contains(text(), 'Confirm')]"));
+        ReadOnlyCollection<IWebElement> confirmButtons = webDriver.FindElements(By.XPath(XPathConstants.ConfirmButton));
 
         if (confirmButtons.Count == 0)
         {
-            Console.WriteLine("No requests found to confirm.");
+            "No requests found to confirm.".WriteMessage(MessageType.Info);
             return;
         }
 
@@ -98,11 +95,11 @@ public class ManageReceivedRequestsHandler() : BaseCommandHandler
 
     private void DeleteAllReceivedRequests(IWebDriver webDriver)
     {
-        ReadOnlyCollection<IWebElement> deleteButtons = webDriver.FindElements(By.XPath("//div[contains(text(), 'Delete')]"));
+        ReadOnlyCollection<IWebElement> deleteButtons = webDriver.FindElements(By.XPath(XPathConstants.DeleteButton));
 
         if (deleteButtons.Count == 0)
         {
-            Console.WriteLine("No requests found to delete.");
+            "No requests found to delete.".WriteMessage(MessageType.Info);
             return;
         }
 

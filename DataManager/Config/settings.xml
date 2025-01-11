@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ConfigurationSettings>
 	<BrowserSettings>
-		<Headless>true</Headless>
+		<Headless>false</Headless>
 		<FirefoxPath>C:\Program Files\Firefox Developer Edition\firefox.exe</FirefoxPath>
 		<DisableBotDetection>true</DisableBotDetection>
 	</BrowserSettings>

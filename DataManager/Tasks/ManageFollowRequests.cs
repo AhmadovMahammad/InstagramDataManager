@@ -1,5 +1,4 @@
-﻿using ConsoleTables;
-using DataManager.Constant;
+﻿using DataManager.Constant;
 using DataManager.Constant.Enums;
 using DataManager.DesignPattern.Builder;
 using DataManager.DesignPattern.Strategy;
@@ -8,8 +7,8 @@ using DataManager.Helper.Utility;
 using DataManager.Models.JsonModels;
 using OpenQA.Selenium;
 
-namespace DataManager.Handler.ManageHandlers;
-public class ManageFollowRequestsHandler : BaseCommandHandler
+namespace DataManager.Tasks;
+public class ManageFollowRequests : BaseTaskHandler
 {
     private readonly string _rootElementPath = string.Empty;
     private int _unfollowedCount = 0;
@@ -17,7 +16,7 @@ public class ManageFollowRequestsHandler : BaseCommandHandler
 
     public override OperationType OperationType => OperationType.Hybrid;
 
-    public ManageFollowRequestsHandler(CommandType commandType)
+    public ManageFollowRequests(CommandType commandType)
     {
         _rootElementPath = commandType switch
         {
@@ -44,8 +43,8 @@ public class ManageFollowRequestsHandler : BaseCommandHandler
             return;
         }
 
-        Console.WriteLine($"[{DateTime.Now}] Total sent follow requests found: {data.Count()}");
-        if (!"Would you like to decline or return these pending requests? (y/n)".AskToProceed())
+        Console.WriteLine($"\n[{DateTime.Now}] Total sent follow requests found in file: {data.Count()}");
+        if (!"Would you like to decline these pending requests? (y/n)".AskToProceed())
         {
             Console.WriteLine($"Operation canceled by the user.");
             return;
@@ -54,38 +53,36 @@ public class ManageFollowRequestsHandler : BaseCommandHandler
         // Build and execute
         var taskBuilder = new SeleniumTaskBuilder(webDriver);
         taskBuilder
-            .PerformAction((IWebDriver webDriver) => HandleAllPendingRequests(webDriver, data))
+            .PerformAction((webDriver) => HandleAllPendingRequests(webDriver, data))
             .ExecuteTasks();
     }
 
     private void HandleAllPendingRequests(IWebDriver webDriver, IEnumerable<RelationshipData> data)
     {
-        "Starting the process of declining requests...\n".WriteMessage(MessageType.Info);
-        WebDriverExtension.EnsureDomLoaded(webDriver);
+        "\nStarting the process of declining requests...".WriteMessage(MessageType.Info);
+        webDriver.EnsureDomLoaded();
 
         var stringListData = data.SelectMany(relationshipData => relationshipData.StringListData);
         if (stringListData.Any())
         {
             foreach (var childData in stringListData)
             {
-                Console.WriteLine($"Navigating to profile > {childData.Value}");
+                string username = childData.Value;
+                Console.WriteLine($"Navigating to profile > {username}");
 
                 if (!TryProcessNextRequest(webDriver, childData.Href))
                 {
-                    $"Unable to decline the sent request for {childData.Value}. It seems this request is no longer pending or was not accepted.\n".WriteMessage(MessageType.Warning);
-                    _notAcceptedCount++;
+                    $"Unable to decline the sent request for {username}".WriteMessage(MessageType.Warning);
+                    "It seems this request is no longer pending or was not accepted.\n".WriteMessage(MessageType.Warning);
                 }
                 else
                 {
+                    $"Successfully unfollowed {username}.".WriteMessage(MessageType.Success);
                     _unfollowedCount++;
                 }
             }
 
-            "All possible requests were handled successfully.".WriteMessage(MessageType.Success);
-            new List<int> { _unfollowedCount, _notAcceptedCount }.DisplayAsTable((ConsoleTable consoleTable) =>
-            {
-                consoleTable.Options.EnableCount = false;
-            }, "Unfollowed Count", "Declined Count");
+            $"All possible requests ({_unfollowedCount}) were handled successfully.".WriteMessage(MessageType.Success);
         }
     }
 
@@ -94,25 +91,22 @@ public class ManageFollowRequestsHandler : BaseCommandHandler
         try
         {
             webDriver.Navigate().GoToUrl(href);
-            WebDriverExtension.EnsureDomLoaded(webDriver);
+            webDriver.EnsureDomLoaded();
 
-            IWebElement? requestedButton = webDriver.FindWebElement(By.XPath(XPathConstants.RequestedButton), WebElementPriorityType.Medium);
-            if (requestedButton == null)
+            IWebElement? requestedButton = webDriver.FindWebElement(By.XPath(XPathConstants.RequestedButton), WebElementPriorityType.Low);
+            if (requestedButton != null)
             {
-                return false;
-            }
-            requestedButton.Click();
+                IWebElement? unfollowButton = webDriver.FindWebElement(By.XPath(XPathConstants.UnfollowButton), WebElementPriorityType.Low);
+                if (unfollowButton != null)
+                {
+                    requestedButton.Click();
+                    unfollowButton.Click();
+                }
 
-            IWebElement? unfollowButton = webDriver.FindWebElement(By.XPath(XPathConstants.UnfollowButton), WebElementPriorityType.Medium);
-            if (unfollowButton == null)
-            {
-                $"'Unfollow' button not found on the page.".WriteMessage(MessageType.Error);
-                return false;
+                return true;
             }
-            unfollowButton.Click();
 
-            $"Successfully unfollowed the request for the user.".WriteMessage(MessageType.Success);
-            return true;
+            return false;
         }
         catch (Exception)
         {

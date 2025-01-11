@@ -24,32 +24,20 @@ public static partial class ConsoleExtension
         Console.ResetColor();
     }
 
-    public static bool AskToProceed(this string message)
-    {
-        Console.WriteLine(message);
-        Console.Write("> ");
-
-        string userInput = Console.ReadLine()?.Trim().ToLower() ?? string.Empty;
-        return string.Equals(userInput, "y", StringComparison.OrdinalIgnoreCase);
-    }
-
     public static string GetInput(this string prompt, string defaultValue = "")
     {
-        Console.Write(prompt);
+        Console.Write($"{prompt} > ");
         string input = Console.ReadLine() ?? string.Empty;
+
         return string.IsNullOrEmpty(input) ? defaultValue : input;
     }
 
     public static string GetPasswordInput(this string prompt, string defaultValue = "")
     {
-        Console.Write(prompt);
+        Console.Write($"{prompt} > ");
         string input = PasswordExtension.ReadPassword() ?? string.Empty;
-        return string.IsNullOrEmpty(input) ? defaultValue : input;
-    }
 
-    public static void LogException(this Exception exception, string message)
-    {
-        $"{message} Details: {exception.Message}".WriteMessage(MessageType.Error);
+        return string.IsNullOrEmpty(input) ? defaultValue : input;
     }
 
     public static void ClearLine()
@@ -64,6 +52,19 @@ public static partial class ConsoleExtension
             Console.SetCursorPosition(pos - 1, Console.CursorTop);
             pos--;
         }
+    }
+
+    public static bool AskToProceed(this string message)
+    {
+        Console.Write($"{message} > ");
+        string userInput = Console.ReadLine()?.Trim().ToLower() ?? string.Empty;
+
+        return string.Equals(userInput, "y", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static void LogException(this Exception exception, string message)
+    {
+        $"{message} Details: {exception.Message}".WriteMessage(MessageType.Error);
     }
 
     public static void PrintBanner()

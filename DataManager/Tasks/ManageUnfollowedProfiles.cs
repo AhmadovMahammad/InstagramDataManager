@@ -6,9 +6,8 @@ using DataManager.Model.JsonModel;
 using DataManager.Models.JsonModels;
 using OpenQA.Selenium;
 
-namespace DataManager.Handler.ManageHandlers;
-
-public class ManageRecentlyUnfollowedHandler() : BaseCommandHandler
+namespace DataManager.Tasks;
+public class ManageUnfollowedProfiles() : BaseTaskHandler
 {
     public override OperationType OperationType => OperationType.Hybrid;
 
