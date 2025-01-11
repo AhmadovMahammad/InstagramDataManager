@@ -33,6 +33,20 @@ public static partial class ConsoleExtension
         return string.Equals(userInput, "y", StringComparison.OrdinalIgnoreCase);
     }
 
+    public static string GetInput(this string prompt, string defaultValue = "")
+    {
+        Console.Write(prompt);
+        string input = Console.ReadLine() ?? string.Empty;
+        return string.IsNullOrEmpty(input) ? defaultValue : input;
+    }
+
+    public static string GetPasswordInput(this string prompt, string defaultValue = "")
+    {
+        Console.Write(prompt);
+        string input = PasswordExtension.ReadPassword() ?? string.Empty;
+        return string.IsNullOrEmpty(input) ? defaultValue : input;
+    }
+
     public static void LogException(this Exception exception, string message)
     {
         $"{message} Details: {exception.Message}".WriteMessage(MessageType.Error);
