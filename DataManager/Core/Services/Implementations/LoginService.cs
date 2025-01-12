@@ -7,6 +7,7 @@ using DataManager.Factory;
 using DataManager.Helper.Extension;
 using DataManager.Helper.Utility;
 using DataManager.Model;
+using DataManager.Model.JsonModel;
 using OpenQA.Selenium;
 using System.Text.Json;
 
@@ -14,35 +15,43 @@ namespace DataManager.Core.Services.Implementations;
 public class LoginService : ILoginService
 {
     private readonly IChainHandler _validationChain;
-    private readonly string _credentialsPath = Path.Combine(AppConstant.ApplicationDataFolderPath, "Credentials");
+    private readonly string _credentialsPath;
+    private string _savedFilepath = string.Empty;
+    public IWebDriver WebDriver { get; }
 
     public LoginService()
     {
         _validationChain = new ArgumentNotEmptyHandler()
                 .SetNext(new FileExistsHandler())
                 .SetNext(new FileExtensionHandler([".exe"]));
-
         WebDriver = FirefoxDriverFactory.CreateDriver(_validationChain);
 
+        _credentialsPath = Path.Combine(AppConstant.ApplicationDataFolderPath, "Credentials");
         if (!Directory.Exists(_credentialsPath))
         {
             Directory.CreateDirectory(_credentialsPath);
         }
     }
 
-    public IWebDriver WebDriver { get; }
 
     public void ExecuteLogin()
     {
         try
         {
             NavigateToLoginPage();
-            PerformLoginSteps(); // get credentials from file if they exists, otherwise ask from user.
-            HandleLoginOutcome(); // handle [ Success, 2FA, IncorrectPassword ] outcomes
+            PerformLoginSteps();
+            HandleLoginOutcome();
             SaveInfo();
         }
         catch (Exception)
         {
+            if (File.Exists(_savedFilepath))
+            {
+                "Your credentials have been removed from an existing file; please register as a new user in our program the next time."
+                    .WriteMessage(MessageType.Info);
+
+                File.Delete(_savedFilepath);
+            }
             throw;
         }
     }
@@ -54,74 +63,68 @@ public class LoginService : ILoginService
             WebDriver.Navigate().GoToUrl("https://www.instagram.com/accounts/login/");
             "Instagram login page opened successfully!\n".WriteMessage(MessageType.Success);
         }
-        catch (Exception ex)
+        catch
         {
-            throw new LoginException($"Error navigating to login page: {ex.Message}");
+            throw new Exception($"An error occurred while navigating to Login page.");
         }
     }
 
-    private void PerformLoginSteps() // TODO: Errors may arise during login execution; if this happens, simply remove the file.
+    private void PerformLoginSteps()
     {
         bool hasNewCredentials = false;
-        bool errorOccurred = false;
-        (string username, string password) credentials = (string.Empty, string.Empty);
+        LoginDetail loginDetail = null!;
 
         try
         {
-            credentials = GetUserCredentials(out hasNewCredentials);
-            FillLoginForm(credentials);
+            loginDetail = GetUserCredentials(out hasNewCredentials);
+            FillLoginForm(loginDetail);
             WebDriver.FindElement(By.XPath(XPathConstants.SubmitButton)).Submit();
         }
-        catch (Exception ex)
+        catch
         {
-            errorOccurred = true;
-            throw new LoginException($"Error during login steps: {ex.Message}");
+            throw new Exception($"An error occurred while filling User credentials");
         }
         finally
         {
-            if (hasNewCredentials && !errorOccurred)
+            if (hasNewCredentials)
             {
-                SaveCredentials(credentials);
+                SaveCredentials(loginDetail);
             }
         }
     }
 
-    private (string username, string password) GetUserCredentials(out bool hasNewCredentials)
+    private LoginDetail GetUserCredentials(out bool hasNewCredentials)
     {
         hasNewCredentials = false;
-        var (username, password) = RetrieveCredentials();
+        LoginDetail loginDetail = RetrieveCredentials();
 
-        if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
+        if (loginDetail != LoginDetail.Empty)
         {
             "Previous credentials found. Press Enter to use them, or enter new credentials to overwrite.".WriteMessage(MessageType.Info);
+            string password = "Password".GetPasswordInput(loginDetail.Password);
 
-            string username_v2 = $"Username".GetInput(username);
-            string password_v2 = "Password".GetPasswordInput(password);
-
-            if (username != username_v2 || password != password_v2)
+            if (password != loginDetail.Password)
             {
                 hasNewCredentials = true;
-                username = username_v2;
-                password = password_v2;
+                loginDetail.Password = password;
             }
         }
         else
         {
             hasNewCredentials = true;
-
-            username = "Enter username".GetInput();
-            password = "Enter password".GetPasswordInput();
+            loginDetail.UserName = "Enter username".GetInput();
+            loginDetail.Password = "Enter password".GetPasswordInput();
         }
 
-        return (username, password);
+        return loginDetail;
     }
 
-    private (string username, string password) RetrieveCredentials()
+    private LoginDetail RetrieveCredentials()
     {
-        string selectedFile = GetSpecificCredentialFile(Directory.GetFiles(_credentialsPath, "backup_*.json"));
+        string selectedFile = GetSpecificFile(Directory.GetFiles(_credentialsPath, "backup_*.json"));
         if (string.IsNullOrEmpty(selectedFile))
         {
-            return (string.Empty, string.Empty);
+            return LoginDetail.Empty;
         }
 
         try
@@ -132,7 +135,7 @@ public class LoginService : ILoginService
             if (credential != null)
             {
                 string decryptedPassword = DataProtectionHelper.Decrypt(credential.EncryptedPassword, credential.Salt);
-                return (credential.Username, decryptedPassword);
+                return new LoginDetail() { UserName = credential.Username, Password = decryptedPassword };
             }
         }
         catch
@@ -140,28 +143,39 @@ public class LoginService : ILoginService
             // todo: handle logs
         }
 
-        return (string.Empty, string.Empty);
+        return LoginDetail.Empty;
     }
 
-    private string GetSpecificCredentialFile(string[] fileNames)
+    private string GetSpecificFile(string[] fileNames)
     {
-        if (fileNames.Length == 0)
-        {
-            return string.Empty;
-        }
+        if (fileNames.Length == 0) return string.Empty;
+        var fileOptions = fileNames
+            .Select((file, index) =>
+            {
+                return new
+                {
+                    Index = index + 1,
+                    Username = Path.GetFileNameWithoutExtension(file).Replace("backup_", ""),
+                    FileName = Path.GetFileName(file),
+                };
+            });
 
         string selectedFile = string.Empty;
-        Console.WriteLine("Multiple credentials found. Please select one:");
 
-        for (int i = 0; i < fileNames.Length; i++)
+        int count = fileOptions.Count();
+        string message = fileOptions.Count() == 1
+            ? "One credential found."
+            : $"Multiple credentials found.";
+
+        message.WriteMessage(MessageType.Info);
+        foreach (var item in fileOptions)
         {
-            string username = GetUsername(fileNames[i]);
-            Console.WriteLine($"{i + 1}: {username}");
+            Console.WriteLine($"#{item.Index} {item.Username} ({item.FileName})");
         }
 
         while (true)
         {
-            string input = "\nEnter the number of the credential you want to use, or type 'exit' to enter new credentials.".GetInput();
+            string input = "Enter the number of the credential you want to use, or type 'exit' to enter new credentials.".GetInput();
             if (string.Equals(input, "exit", StringComparison.OrdinalIgnoreCase))
             {
                 break;
@@ -173,41 +187,43 @@ public class LoginService : ILoginService
                 break;
             }
 
-            "Invalid selection. Please try again.".WriteMessage(MessageType.Error);
+            "Invalid selection. Please try again.".WriteMessage(MessageType.Warning);
         }
 
         Console.WriteLine();
         return selectedFile;
     }
 
-    private string GetUsername(string filename) => Path.GetFileNameWithoutExtension(filename).Replace("backup_", "");
-
-    private void FillLoginForm((string username, string password) credentials)
+    private void FillLoginForm(LoginDetail loginDetail)
     {
         IWebElement usernameField = WebDriver.FindElement(By.XPath(XPathConstants.UsernameField));
-        SendKeys(usernameField, credentials.username);
+        SendKeys(usernameField, loginDetail.UserName);
 
         IWebElement passwordField = WebDriver.FindElement(By.XPath(XPathConstants.PasswordField));
-        SendKeys(passwordField, credentials.password);
+        SendKeys(passwordField, loginDetail.Password);
     }
 
-    private void SaveCredentials((string username, string password) credentials)
+    private void SaveCredentials(LoginDetail loginDetail)
     {
-        string fileName = Path.Combine(_credentialsPath, $"backup_{credentials.username}.json");
+        _savedFilepath = Path.Combine(_credentialsPath, $"backup_{loginDetail.UserName}.json");
+        if (File.Exists(_savedFilepath))
+        {
+            File.Delete(_savedFilepath);
+        }
 
         try
         {
-            string encryptedPassword = DataProtectionHelper.Encrypt(credentials.password, out string salt);
+            string encryptedPassword = DataProtectionHelper.Encrypt(loginDetail.Password, out string salt);
 
             var credential = new Credential
             {
-                Username = credentials.username,
+                Username = loginDetail.UserName,
                 Salt = salt,
                 EncryptedPassword = encryptedPassword
             };
 
             string json = JsonSerializer.Serialize(credential);
-            File.WriteAllText(fileName, json);
+            File.WriteAllText(_savedFilepath, json);
         }
         catch (Exception ex)
         {

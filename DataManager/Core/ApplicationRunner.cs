@@ -23,11 +23,11 @@ public class ApplicationRunner
     public void Run()
     {
         Console.WriteLine(); // To split our inputs and Firefox Driver Settings from each-other.
-        bool loginSuccessful;
+        bool loginSuccessful, stopProcess = false;
         IWebDriver? webDriver = null;
 
         if (!"To perform any operation, you must sign in to your Instagram account.\nDo you want to keep logging into your account? (y/n)".AskToProceed())
-            return;
+            return; 
 
         do
         {
@@ -40,9 +40,9 @@ public class ApplicationRunner
                 }
                 else
                 {
-                    webDriver?.Quit();
                     if (!"Login failed. Would you like to try again? (y/n)".AskToProceed())
                     {
+                        stopProcess = true;
                         break;
                     }
                 }
@@ -54,7 +54,10 @@ public class ApplicationRunner
             }
             finally
             {
-                webDriver?.Quit();
+                if (stopProcess)
+                {
+                    webDriver?.Quit();
+                }
             }
         } while (!loginSuccessful && webDriver != null);
     }

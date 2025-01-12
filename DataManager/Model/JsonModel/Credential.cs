@@ -1,4 +1,4 @@
-﻿namespace DataManager.Model;
+﻿namespace DataManager.Model.JsonModel;
 public class Credential
 {
     public string Username { get; set; } = string.Empty;
