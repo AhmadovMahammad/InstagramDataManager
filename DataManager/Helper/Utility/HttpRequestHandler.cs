@@ -9,8 +9,7 @@ public class HttpRequestHandler
     private readonly HttpClient _httpClient;
     private readonly string _userId;
     private readonly string _csrfToken;
-
-    private static readonly string _baseUrl = "https://www.instagram.com/api/v1/friendships/";
+    private readonly string _baseUrl = "https://www.instagram.com/api/v1/friendships/";
 
     private static readonly Dictionary<string, string> _defaultHeaders = new()
     {

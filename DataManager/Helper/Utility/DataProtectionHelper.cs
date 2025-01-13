@@ -6,12 +6,6 @@ public class DataProtectionHelper
 {
     private static readonly DataProtectionScope _scope = DataProtectionScope.CurrentUser;
     private static readonly RandomNumberGenerator _randomNumberGenerator = RandomNumberGenerator.Create();
-    private readonly byte[] _salt = new byte[32];
-
-    public DataProtectionHelper()
-    {
-        _randomNumberGenerator.GetBytes(_salt);
-    }
 
     public static string Encrypt(string data, out string salt)
     {

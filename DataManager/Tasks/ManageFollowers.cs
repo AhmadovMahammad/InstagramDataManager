@@ -127,9 +127,12 @@ public class ManageFollowers : BaseTaskHandler
     {
         try
         {
+            "Fetching user data, please wait...".WriteMessage(MessageType.Info, addNewLine: false);
+            
             var following = _httpRequestHandler.FetchFollowingAsync().Result;
             var followers = _httpRequestHandler.FetchFollowersAsync().Result;
 
+            ConsoleExtension.ClearLine();
             return new UserData(followers, following, DateTime.Now);
         }
         catch (Exception ex)
