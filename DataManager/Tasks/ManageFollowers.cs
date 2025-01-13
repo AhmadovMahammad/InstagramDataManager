@@ -11,9 +11,18 @@ namespace DataManager.Tasks;
 public class ManageFollowers : BaseTaskHandler
 {
     private HttpRequestHandler _httpRequestHandler = null!;
+    private readonly string _profilesDataPath;
     private string _username = string.Empty;
-
     public override OperationType OperationType => OperationType.SeleniumBased;
+
+    public ManageFollowers()
+    {
+        _profilesDataPath = Path.Combine(AppConstant.ApplicationDataFolderPath, "ProfilesData");
+        if (!Directory.Exists(_profilesDataPath))
+        {
+            Directory.CreateDirectory(_profilesDataPath);
+        }
+    }
 
     protected override void Execute(Dictionary<string, object> parameters)
     {
@@ -165,7 +174,7 @@ public class ManageFollowers : BaseTaskHandler
 
     private bool TrySaveUserData(UserData userData, out string fileName)
     {
-        fileName = Path.Combine(AppConstant.ApplicationDataFolderPath, "ProfilesData", $"followers_data_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.json");
+        fileName = Path.Combine(_profilesDataPath, $"followers_data_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.json");
 
         try
         {
@@ -212,6 +221,5 @@ public class ManageFollowers : BaseTaskHandler
             newFollowing.Count(),
             removedFollowing.Count()
         }.Max();
-
     }
 }
