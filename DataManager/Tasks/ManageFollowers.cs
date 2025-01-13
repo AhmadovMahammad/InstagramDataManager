@@ -5,21 +5,20 @@ using DataManager.Helper.Extension;
 using DataManager.Helper.Utility;
 using DataManager.Model;
 using OpenQA.Selenium;
-using OpenQA.Selenium.Support.UI;
 using System.Text.Json;
 
 namespace DataManager.Tasks;
 public class ManageFollowers : BaseTaskHandler
 {
+    private HttpRequestHandler _httpRequestHandler = null!;
     private string _username = string.Empty;
-    private int _followersCount = 0;
-    private int _followingCount = 0;
 
     public override OperationType OperationType => OperationType.SeleniumBased;
 
     protected override void Execute(Dictionary<string, object> parameters)
     {
         IWebDriver webDriver = parameters.Parse<IWebDriver>("WebDriver");
+        _httpRequestHandler = new HttpRequestHandler(webDriver);
 
         _username = AskForUsername();
         if (string.IsNullOrWhiteSpace(_username)) return;
@@ -99,15 +98,8 @@ public class ManageFollowers : BaseTaskHandler
 
     private bool HasAccessToProfile(IWebDriver webDriver)
     {
-        try
-        {
-            var followButton = webDriver.FindWebElement(By.XPath(XPathConstants.FollowButton), WebElementPriorityType.Low);
-            return followButton == null;
-        }
-        catch
-        {
-            return false;
-        }
+        var followButton = webDriver.FindWebElement(By.XPath(XPathConstants.FollowButton), WebElementPriorityType.Low);
+        return followButton == null;
     }
 
     private void ManageData(IWebDriver webDriver)
@@ -126,10 +118,8 @@ public class ManageFollowers : BaseTaskHandler
     {
         try
         {
-            (string followersXPath, string followingXPath) = InitializeData(webDriver, username);
-
-            var followers = FetchUserList(webDriver, followersXPath, _followersCount, "Followers");
-            var following = FetchUserList(webDriver, followingXPath, _followingCount, "Following");
+            var following = _httpRequestHandler.FetchFollowingAsync().Result;
+            var followers = _httpRequestHandler.FetchFollowersAsync().Result;
 
             return new UserData(followers, following, DateTime.Now);
         }
@@ -137,98 +127,6 @@ public class ManageFollowers : BaseTaskHandler
         {
             ex.LogException("Error fetching user data.");
             return null;
-        }
-    }
-
-    private (string followersXPath, string followingXPath) InitializeData(IWebDriver webDriver, string username)
-    {
-        try
-        {
-            string followersXPath = $"//a[contains(@href,'/{username}/followers/')]/span/span[normalize-space(text())]";
-            string followingXPath = $"//a[contains(@href,'/{username}/following/')]/span/span[normalize-space(text())]";
-
-            _followersCount = int.Parse(webDriver.FindElement(By.XPath(followersXPath)).Text.Trim());
-            _followingCount = int.Parse(webDriver.FindElement(By.XPath(followingXPath)).Text.Trim());
-
-            new List<string>
-            {
-                username, _followersCount.ToString(), _followingCount.ToString()
-            }.DisplayAsTable(null, "Username", "Followers", "Following");
-
-            return (followersXPath, followingXPath);
-        }
-        catch (Exception ex)
-        {
-            ex.LogException("Failed to initialize data. Ensure the profile URL is valid and accessible.");
-            throw;
-        }
-    }
-
-    // TODO: Fetch users from api.
-    private HashSet<UserEntry> FetchUserList(IWebDriver webDriver, string itemXPath, int totalCount, string action)
-    {
-        var listItems = new HashSet<UserEntry>();
-        int id = 1;
-
-        try
-        {
-            var modalButton = webDriver.FindWebElement(By.XPath(itemXPath), WebElementPriorityType.Medium);
-            if (modalButton == null) return listItems;
-
-            modalButton.Click();
-            webDriver.EnsureDomLoaded();
-
-            var scrollbarElement = webDriver.FindWebElement(By.XPath(XPathConstants.Scrollbar), WebElementPriorityType.Low);
-            if (scrollbarElement == null) return listItems;
-
-            var wait = new WebDriverWait(webDriver, AppConstant.ExplicitWait);
-            wait.IgnoreExceptionTypes(typeof(WebDriverTimeoutException));
-
-            while (listItems.Count < totalCount)
-            {
-                try
-                {
-                    wait.Until(driver =>
-                    {
-                        var currentElements = driver.FindElements(By.XPath(XPathConstants.ManagableUsername));
-                        return currentElements.Count != 0;
-                    });
-                }
-                catch (WebDriverTimeoutException)
-                {
-                }
-
-                var currentElements = webDriver.FindElements(By.XPath(XPathConstants.ManagableUsername));
-                AddUniqueUsernames(currentElements, listItems, ref id);
-
-                if (listItems.Count < totalCount)
-                {
-                    webDriver.ScrollToBottom(scrollbarElement, 200);
-                    Thread.Sleep(500);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            ex.LogException($"Error occurred while fetching {action} list.");
-        }
-        finally
-        {
-            webDriver.Navigate().Refresh();
-        }
-
-        return listItems;
-    }
-
-    private void AddUniqueUsernames(IReadOnlyCollection<IWebElement> elements, HashSet<UserEntry> listItems, ref int id)
-    {
-        foreach (var element in elements)
-        {
-            string username = element.Text.Trim();
-            if (listItems.All(userEntry => userEntry.Username != username))
-            {
-                listItems.Add(new UserEntry(id++, username));
-            }
         }
     }
 
@@ -301,6 +199,19 @@ public class ManageFollowers : BaseTaskHandler
 
     private void AnalyzeAndDisplayChanges(UserData currentData, UserData previousData)
     {
+        var newFollowers = currentData.Followers.Except(previousData.Followers);
+        var removedFollowers = previousData.Followers.Except(currentData.Followers);
+
+        var newFollowing = currentData.Following.Except(previousData.Following);
+        var removedFollowing = previousData.Following.Except(currentData.Following);
+
+        int maxLength = new int[]
+        {
+            newFollowers.Count(),
+            removedFollowers.Count(),
+            newFollowing.Count(),
+            removedFollowing.Count()
+        }.Max();
 
     }
 }
