@@ -16,8 +16,8 @@ public static partial class TableExtension
         {
             if (columnNames.Length == data.Count())
             {
-                var countData = data.ToArray();
-                table.AddRow(countData.Select(num => num?.ToString()).ToArray());
+                var dataArray = data.ToArray();
+                table.AddRow(dataArray.Select(num => num?.ToString()).ToArray());
             }
         }
         else

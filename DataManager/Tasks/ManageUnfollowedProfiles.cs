@@ -9,7 +9,7 @@ using OpenQA.Selenium;
 namespace DataManager.Tasks;
 public class ManageUnfollowedProfiles() : BaseTaskHandler
 {
-    public override OperationType OperationType => OperationType.Hybrid;
+    public override OperationType OperationType => OperationType.FileBased;
 
     protected override void Execute(Dictionary<string, object> parameters)
     {
@@ -28,8 +28,7 @@ public class ManageUnfollowedProfiles() : BaseTaskHandler
             return;
         }
 
-        // Display Result
-        Console.WriteLine($"[{DateTime.Now}] Total recently unfollowed profiled found: {data.Count()}");
+        $"{data.Count()} entries found for processing.".WriteMessage(MessageType.Info);
         if (!"\nWould you prefer a table-format display of recently unfollowed followers? (y/n)".AskToProceed())
         {
             Console.WriteLine($"Operation canceled by the user.");

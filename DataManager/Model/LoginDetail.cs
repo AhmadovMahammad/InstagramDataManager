@@ -6,7 +6,7 @@ public class LoginDetail
 
     public static LoginDetail Empty => new() { UserName = string.Empty, Password = string.Empty };
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (obj is not LoginDetail other) return false;
         return UserName == other.UserName && Password == other.Password;

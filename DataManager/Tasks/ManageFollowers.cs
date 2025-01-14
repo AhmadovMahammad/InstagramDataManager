@@ -13,15 +13,13 @@ public class ManageFollowers : BaseTaskHandler
     private HttpRequestHandler _httpRequestHandler = null!;
     private readonly string _profilesDataPath;
     private string _username = string.Empty;
+
     public override OperationType OperationType => OperationType.SeleniumBased;
 
     public ManageFollowers()
     {
         _profilesDataPath = Path.Combine(AppConstant.ApplicationDataFolderPath, "ProfilesData");
-        if (!Directory.Exists(_profilesDataPath))
-        {
-            Directory.CreateDirectory(_profilesDataPath);
-        }
+        Directory.CreateDirectory(_profilesDataPath);
     }
 
     protected override void Execute(Dictionary<string, object> parameters)
@@ -29,24 +27,25 @@ public class ManageFollowers : BaseTaskHandler
         IWebDriver webDriver = parameters.Parse<IWebDriver>("WebDriver");
         _httpRequestHandler = new HttpRequestHandler(webDriver);
 
-        _username = AskForUsername();
+        _username = PromptForUsername();
         if (string.IsNullOrWhiteSpace(_username)) return;
 
         bool success = false;
 
         var taskBuilder = new SeleniumTaskBuilder(webDriver);
         taskBuilder
-            .PerformAction(d => ValidateInput(d, out success))
+            .PerformAction(d => ValidateProfileAccess(d, out success))
             .PerformAction(d =>
             {
                 if (success)
                 {
-                    ManageData(d);
+                    ManageUserData(d);
                 }
-            }).ExecuteTasks();
+            })
+            .ExecuteTasks();
     }
 
-    private string AskForUsername()
+    private string PromptForUsername()
     {
         while (true)
         {
@@ -61,33 +60,20 @@ public class ManageFollowers : BaseTaskHandler
         }
     }
 
-    private void ValidateInput(IWebDriver webDriver, out bool success)
+    private void ValidateProfileAccess(IWebDriver webDriver, out bool success)
     {
         success = true;
+        "Checking profile access, this may take a few seconds.".WriteMessage(MessageType.Info, addNewLine: false);
 
-        "Checking to see whether you have access to this profile. It may require a few seconds.".WriteMessage(MessageType.Info, addNewLine: false);
-        if (!NavigateToProfile(webDriver, _username))
+        if (!TryNavigateToProfile(webDriver, _username) || !IsProfileAccessible(webDriver))
         {
-            ConsoleExtension.ClearLine();
             success = false;
-
-            "Unable to access the profile. Please make sure the profile is valid and accessible.".WriteMessage(MessageType.Warning);
-            return;
-        }
-
-        if (!HasAccessToProfile(webDriver))
-        {
-            ConsoleExtension.ClearLine();
-            success = false;
-
-            "You can only process profiles you are following. Please follow the profile and try again.".WriteMessage(MessageType.Error);
-            return;
         }
 
         ConsoleExtension.ClearLine();
     }
 
-    private bool NavigateToProfile(IWebDriver webDriver, string username)
+    private bool TryNavigateToProfile(IWebDriver webDriver, string username)
     {
         try
         {
@@ -105,30 +91,36 @@ public class ManageFollowers : BaseTaskHandler
         }
     }
 
-    private bool HasAccessToProfile(IWebDriver webDriver)
+    private bool IsProfileAccessible(IWebDriver webDriver)
     {
         var followButton = webDriver.FindWebElement(By.XPath(XPathConstants.FollowButton), WebElementPriorityType.Low);
-        return followButton == null;
+        if (followButton == null)
+        {
+            return true;
+        }
+
+        "You can only process profiles you are following.".WriteMessage(MessageType.Error);
+        return false;
     }
 
-    private void ManageData(IWebDriver webDriver)
+    private void ManageUserData(IWebDriver webDriver)
     {
-        var userData = FetchUserData(webDriver, _username);
+        var userData = FetchUserData();
         if (userData == null)
         {
             "Failed to fetch followers data.".WriteMessage(MessageType.Error);
             return;
         }
 
-        HandleDataComparison(userData);
+        CompareAndSaveData(userData);
     }
 
-    private UserData? FetchUserData(IWebDriver webDriver, string username)
+    private UserData? FetchUserData()
     {
         try
         {
-            "Fetching user data, please wait...".WriteMessage(MessageType.Info, addNewLine: false);
-            
+            "Fetching user data...".WriteMessage(MessageType.Info, addNewLine: false);
+
             var following = _httpRequestHandler.FetchFollowingAsync().Result;
             var followers = _httpRequestHandler.FetchFollowersAsync().Result;
 
@@ -142,17 +134,18 @@ public class ManageFollowers : BaseTaskHandler
         }
     }
 
-    private void HandleDataComparison(UserData currentData)
+    private void CompareAndSaveData(UserData currentData)
     {
-        Console.WriteLine("Do you have previous data to compare? (y/n):");
-        Console.Write("> ");
-        bool hasPreviousData = Console.ReadLine()?.Trim().Equals("y", StringComparison.OrdinalIgnoreCase) ?? false;
-
-        if (hasPreviousData)
+        if (!"Do you have previous data to compare? (y/n)".AskToProceed())
         {
-            Console.WriteLine("Enter the file path for previous data:");
-            string filePath = Console.ReadLine()?.Trim() ?? string.Empty;
-
+            if (TrySaveUserData(currentData, out string fileName))
+            {
+                $"Data saved to {fileName}.".WriteMessage(MessageType.Success);
+            }
+        }
+        else
+        {
+            string filePath = "Enter the file path for previous data".GetInput();
             if (File.Exists(filePath))
             {
                 var previousData = LoadUserData(filePath);
@@ -162,36 +155,28 @@ public class ManageFollowers : BaseTaskHandler
                     return;
                 }
 
-                AnalyzeAndDisplayChanges(currentData, previousData);
+                DisplayComparison(currentData, previousData);
             }
             else
             {
                 "File not found.".WriteMessage(MessageType.Error);
             }
         }
-        else if (TrySaveUserData(currentData, out string fileName))
-        {
-            $"Current followers data saved to {fileName}.".WriteMessage(MessageType.Success);
-        }
     }
 
     private bool TrySaveUserData(UserData userData, out string fileName)
     {
-        fileName = Path.Combine(_profilesDataPath, $"followers_data_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.json");
+        fileName = Path.Combine(_profilesDataPath, $"followers_data_{DateTime.Now:yyyy-MM-dd}.json");
 
         try
         {
-            using FileStream fileStream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.Write);
-            using TextWriter writer = new StreamWriter(fileStream);
-
-            var data = JsonSerializer.Serialize(userData);
-            writer.Write(data);
-
+            string data = JsonSerializer.Serialize(userData);
+            File.WriteAllText(fileName, data);
             return true;
         }
         catch (Exception ex)
         {
-            ex.LogException("An error occurred while saving user data as JSON file.");
+            ex.LogException("An error occurred while saving user data.");
             return false;
         }
     }
@@ -209,20 +194,36 @@ public class ManageFollowers : BaseTaskHandler
         }
     }
 
-    private void AnalyzeAndDisplayChanges(UserData currentData, UserData previousData)
+    private void DisplayComparison(UserData currentData, UserData previousData)
     {
-        var newFollowers = currentData.Followers.Except(previousData.Followers);
-        var removedFollowers = previousData.Followers.Except(currentData.Followers);
+        var newFollowers = currentData.Followers.Except(previousData.Followers).Select(m => m.Username);
+        var removedFollowers = previousData.Followers.Except(currentData.Followers).Select(m => m.Username);
 
-        var newFollowing = currentData.Following.Except(previousData.Following);
-        var removedFollowing = previousData.Following.Except(currentData.Following);
+        var newFollowing = currentData.Following.Except(previousData.Following).Select(m => m.Username);
+        var removedFollowing = previousData.Following.Except(currentData.Following).Select(m => m.Username);
 
-        int maxLength = new int[]
+        var analysisData = CreateComparisonData(newFollowers, newFollowing, removedFollowers, removedFollowing);
+
+        Console.WriteLine(); // to differ table visualization from above inputs
+        analysisData.DisplayAsTable(
+            table => table.Options.EnableCount = false,
+            "New Followers", "New Following", "Removed Followers", "Removed Following"
+        );
+    }
+
+    private IEnumerable<FollowAnalyzeData> CreateComparisonData(
+        IEnumerable<string> newFollowers,
+        IEnumerable<string> newFollowing,
+        IEnumerable<string> removedFollowers,
+        IEnumerable<string> removedFollowing)
+    {
+        int maxRows = new[] { newFollowers.Count(), newFollowing.Count(), removedFollowers.Count(), removedFollowing.Count() }.Max();
+        return Enumerable.Range(0, maxRows).Select(i => new FollowAnalyzeData
         {
-            newFollowers.Count(),
-            removedFollowers.Count(),
-            newFollowing.Count(),
-            removedFollowing.Count()
-        }.Max();
+            NewFollower = newFollowers.ElementAtOrDefault(i) ?? "---",
+            NewFollowing = newFollowing.ElementAtOrDefault(i) ?? "---",
+            RemovedFollower = removedFollowers.ElementAtOrDefault(i) ?? "---",
+            RemovedFollowing = removedFollowing.ElementAtOrDefault(i) ?? "---"
+        });
     }
 }

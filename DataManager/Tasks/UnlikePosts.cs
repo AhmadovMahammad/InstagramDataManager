@@ -94,8 +94,8 @@ public class UnlikePosts : BaseTaskHandler
 
             if (webElement == null) return PostProcessType.NoMorePosts;
             sourceValue = webElement.GetDomAttribute("src");
-            
-            if (webElement.GetDomAttribute("src") == XPathConstants.ErrorRefreshImageSource)
+
+            if (sourceValue == XPathConstants.ErrorRefreshImageSource)
             {
                 return PostProcessType.NoMorePosts;
             }
@@ -157,8 +157,6 @@ public class UnlikePosts : BaseTaskHandler
         {
             webElement.Click();
             webDriver.EnsureDomLoaded();
-
-            // TODO: Check for error refresh image at first
 
             IWebElement? iconElement = webDriver.FindWebElement(By.XPath(XPathConstants.UnlikeButton), WebElementPriorityType.Medium);
             if (iconElement != null)
