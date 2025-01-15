@@ -1,5 +1,7 @@
-﻿using DataManager.Model;
+﻿using DataManager.Helper.Extension;
+using DataManager.Model;
 using OpenQA.Selenium;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
@@ -7,9 +9,9 @@ namespace DataManager.Helper.Utility;
 public class HttpRequestHandler
 {
     private readonly HttpClient _httpClient;
-    private readonly string _userId;
-    private readonly string _csrfToken;
-    private readonly string _baseUrl = "https://www.instagram.com/api/v1/friendships/";
+    private string _userId = string.Empty;
+    private readonly string _manageFollowersBaseUrl = "https://www.instagram.com/api/v1/friendships/";
+    private readonly string _topSearchBaseUrl = "https://www.instagram.com/web/search/topsearch/?query=";
 
     private static readonly Dictionary<string, string> _defaultHeaders = new()
     {
@@ -22,8 +24,7 @@ public class HttpRequestHandler
     public HttpRequestHandler(IWebDriver webDriver)
     {
         var cookies = InitializeCookies(webDriver);
-        _userId = webDriver.Manage().Cookies.GetCookieNamed("ds_user_id")?.Value ?? throw new InvalidOperationException("User ID cookie not found.");
-        _csrfToken = webDriver.Manage().Cookies.GetCookieNamed("csrftoken")?.Value ?? throw new InvalidOperationException("CSRF token not found.");
+        var csrfToken = webDriver.Manage().Cookies.GetCookieNamed("csrftoken")?.Value ?? throw new InvalidOperationException("CSRF token not found.");
 
         _httpClient = new HttpClient(new HttpClientHandler { UseCookies = true, UseProxy = false })
         {
@@ -31,9 +32,12 @@ public class HttpRequestHandler
         };
 
         _httpClient.DefaultRequestHeaders.Add("Cookie", cookies);
-        _httpClient.DefaultRequestHeaders.Add("X-CSRFToken", _csrfToken);
+        _httpClient.DefaultRequestHeaders.Add("X-CSRFToken", csrfToken);
+        //_httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", csrfToken);
         AddDefaultHeaders();
     }
+
+    public string UsernameToSearch { get; set; } = string.Empty;
 
     private string InitializeCookies(IWebDriver webDriver)
     {
@@ -47,6 +51,9 @@ public class HttpRequestHandler
 
     private void AddDefaultHeaders()
     {
+        _httpClient.DefaultRequestHeaders.Add("Referer", "https://www.instagram.com/");
+        _httpClient.DefaultRequestHeaders.Add("Origin", "https://www.instagram.com");
+
         foreach (var header in _defaultHeaders)
         {
             _httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
@@ -61,7 +68,7 @@ public class HttpRequestHandler
         // https://www.instagram.com/api/v1/friendships/user_id/followers/?count=12&search_surface=follow_list_page
         // https://www.instagram.com/api/v1/friendships/user_id/followers/?count=12&max_id=stringType&search_surface=follow_list_page
 
-        string url = $"{_baseUrl}{_userId}/{endpoint}/?count={count}";
+        string url = $"{_manageFollowersBaseUrl}{_userId}/{endpoint}/?count={count}";
 
         if (endpoint.Equals("following", StringComparison.OrdinalIgnoreCase))
         {
@@ -82,6 +89,8 @@ public class HttpRequestHandler
     public async Task<HashSet<UserEntry>> FetchFollowingAsync(int count = 12)
     {
         var result = new HashSet<UserEntry>();
+        _userId = string.IsNullOrEmpty(_userId) ? await FetchUserIdAsync(UsernameToSearch) : _userId;
+
         string? maxId = null;
         bool hasNextPage = true;
 
@@ -100,6 +109,8 @@ public class HttpRequestHandler
     public async Task<HashSet<UserEntry>> FetchFollowersAsync(int count = 12)
     {
         var result = new HashSet<UserEntry>();
+        _userId = string.IsNullOrEmpty(_userId) ? await FetchUserIdAsync(UsernameToSearch) : _userId;
+
         string? maxId = null;
         bool hasNextPage = true;
 
@@ -115,10 +126,38 @@ public class HttpRequestHandler
         return result;
     }
 
+    private async Task<string> FetchUserIdAsync(string username)
+    {
+        string userId = string.Empty;
+
+        try
+        {
+            string url = _topSearchBaseUrl + username;
+            using var response = await _httpClient.GetAsync(url).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+
+            string jsonString = await response.Content.ReadAsStringAsync();
+            var jsonDocument = JsonDocument.Parse(jsonString);
+
+            if (jsonDocument.RootElement.TryGetProperty("users", out var usersArray) && usersArray.GetArrayLength() > 0)
+            {
+                var userElement = usersArray[0];
+                userId = userElement.GetProperty("user").GetProperty("pk").GetString() ?? string.Empty;
+            }
+        }
+        catch (Exception ex)
+        {
+            ex.LogException("Error fetching user ID");
+        }
+
+        return userId;
+    }
+
     private async Task<(string?, List<UserEntry>)> FetchDataAsync(string url)
     {
         var result = new List<UserEntry>();
         string? maxId = null;
+        int id = 1;
 
         try
         {
@@ -134,9 +173,8 @@ public class HttpRequestHandler
                 {
                     result.Add(new UserEntry
                     {
-                        Identifier = user.GetProperty("pk").GetString() ?? string.Empty,
+                        Id = id++,
                         Username = user.GetProperty("username").GetString() ?? string.Empty,
-                        Fullname = user.GetProperty("full_name").GetString() ?? string.Empty
                     });
                 }
             }
@@ -146,7 +184,7 @@ public class HttpRequestHandler
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error fetching data: {ex.Message}");
+            ex.LogException("Error fetching data.");
         }
 
         return (maxId, result);

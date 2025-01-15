@@ -120,6 +120,7 @@ public class ManageFollowers : BaseTaskHandler
         try
         {
             "Fetching user data...".WriteMessage(MessageType.Info, addNewLine: false);
+            _httpRequestHandler.UsernameToSearch = _username;
 
             var following = _httpRequestHandler.FetchFollowingAsync().Result;
             var followers = _httpRequestHandler.FetchFollowersAsync().Result;
@@ -166,7 +167,7 @@ public class ManageFollowers : BaseTaskHandler
 
     private bool TrySaveUserData(UserData userData, out string fileName)
     {
-        fileName = Path.Combine(_profilesDataPath, $"followers_data_{DateTime.Now:yyyy-MM-dd}.json");
+        fileName = Path.Combine(_profilesDataPath, $"followers_data_{DateTime.Now:yyyy-MM-dd--HH-mm-ss}.json");
 
         try
         {
