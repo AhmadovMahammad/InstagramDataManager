@@ -91,6 +91,7 @@ public class HttpRequestHandler
         var result = new HashSet<UserEntry>();
         _userId = string.IsNullOrEmpty(_userId) ? await FetchUserIdAsync(UsernameToSearch) : _userId;
 
+        int counter = 1;
         string? maxId = null;
         bool hasNextPage = true;
 
@@ -99,7 +100,11 @@ public class HttpRequestHandler
             var url = ConstructUrl("following", maxId, count);
             (maxId, List<UserEntry> userEntries) = await FetchDataAsync(url);
 
-            userEntries.ForEach(userEntry => result.Add(userEntry));
+            userEntries.ForEach(userEntry =>
+            {
+                userEntry.Id = counter++;
+                result.Add(userEntry);
+            });
             hasNextPage = maxId != null;
         }
 
@@ -111,6 +116,7 @@ public class HttpRequestHandler
         var result = new HashSet<UserEntry>();
         _userId = string.IsNullOrEmpty(_userId) ? await FetchUserIdAsync(UsernameToSearch) : _userId;
 
+        int counter = 1;
         string? maxId = null;
         bool hasNextPage = true;
 
@@ -119,7 +125,11 @@ public class HttpRequestHandler
             var url = ConstructUrl("followers", maxId, count);
             (maxId, List<UserEntry> userEntries) = await FetchDataAsync(url);
 
-            userEntries.ForEach(userEntry => result.Add(userEntry));
+            userEntries.ForEach(userEntry =>
+            {
+                userEntry.Id = counter++;
+                result.Add(userEntry);
+            });
             hasNextPage = maxId != null;
         }
 
@@ -157,7 +167,6 @@ public class HttpRequestHandler
     {
         var result = new List<UserEntry>();
         string? maxId = null;
-        int id = 1;
 
         try
         {
@@ -173,7 +182,6 @@ public class HttpRequestHandler
                 {
                     result.Add(new UserEntry
                     {
-                        Id = id++,
                         Username = user.GetProperty("username").GetString() ?? string.Empty,
                     });
                 }

@@ -167,7 +167,7 @@ public class ManageFollowers : BaseTaskHandler
 
     private bool TrySaveUserData(UserData userData, out string fileName)
     {
-        fileName = Path.Combine(_profilesDataPath, $"followers_data_{DateTime.Now:yyyy-MM-dd--HH-mm-ss}.json");
+        fileName = Path.Combine(_profilesDataPath, $"data_{_username}_date_{DateTime.Now:yyyy-MM-dd--HH-mm-ss}.json");
 
         try
         {

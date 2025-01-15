@@ -9,6 +9,6 @@ public record UserData(HashSet<UserEntry> Followers, HashSet<UserEntry> Followin
 
 public record UserEntry
 {
-    public int Id { get; init; }
+    public int Id { get; set; }
     public string Username { get; init; } = string.Empty;
 };
