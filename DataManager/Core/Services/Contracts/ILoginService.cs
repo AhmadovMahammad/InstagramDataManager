@@ -3,6 +3,6 @@
 namespace DataManager.Core.Services.Contracts;
 public interface ILoginService
 {
-    IWebDriver WebDriver { get; }
+    (bool startedSuccessfully, IWebDriver WebDriver) StartWebDriver();
     void ExecuteLogin();
 }

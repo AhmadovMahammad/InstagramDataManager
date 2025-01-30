@@ -1,4 +1,6 @@
-﻿using DataManager.Constant;
+﻿using System.Text.Json;
+
+using DataManager.Constant;
 using DataManager.Constant.Enums;
 using DataManager.Core.Services.Contracts;
 using DataManager.DesignPattern.ChainOfResponsibility;
@@ -8,8 +10,8 @@ using DataManager.Helper.Extension;
 using DataManager.Helper.Utility;
 using DataManager.Model;
 using DataManager.Model.JsonModel;
+
 using OpenQA.Selenium;
-using System.Text.Json;
 
 namespace DataManager.Core.Services.Implementations;
 public class LoginService : ILoginService
@@ -17,14 +19,14 @@ public class LoginService : ILoginService
     private readonly IChainHandler _validationChain;
     private readonly string _credentialsPath;
     private string _savedFilepath = string.Empty;
-    public IWebDriver WebDriver { get; }
+
+    private IWebDriver WebDriver = null!;
 
     public LoginService()
     {
         _validationChain = new ArgumentNotEmptyHandler()
                 .SetNext(new FileExistsHandler())
                 .SetNext(new FileExtensionHandler([".exe"]));
-        WebDriver = FirefoxDriverFactory.CreateDriver(_validationChain);
 
         _credentialsPath = Path.Combine(AppConstant.ApplicationDataFolderPath, "Credentials");
         if (!Directory.Exists(_credentialsPath))
@@ -33,6 +35,22 @@ public class LoginService : ILoginService
         }
     }
 
+    public (bool startedSuccessfully, IWebDriver WebDriver) StartWebDriver()
+    {
+        bool startedSuccessfully = false;
+
+        try
+        {
+            WebDriver = FirefoxDriverFactory.CreateDriver(_validationChain);
+            startedSuccessfully = true;
+        }
+        catch (Exception)
+        {
+            startedSuccessfully = false;
+        }
+
+        return (startedSuccessfully, WebDriver);
+    }
 
     public void ExecuteLogin()
     {

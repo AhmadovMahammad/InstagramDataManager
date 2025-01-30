@@ -1,10 +1,12 @@
 ﻿using ConsoleTables;
+
 using DataManager.Automation;
 using DataManager.Constant;
 using DataManager.Constant.Enums;
 using DataManager.Core.Services.Contracts;
 using DataManager.Helper.Extension;
 using DataManager.Model;
+
 using OpenQA.Selenium;
 
 namespace DataManager.Core;
@@ -22,12 +24,11 @@ public class ApplicationRunner
 
     public void Run()
     {
-        Console.WriteLine(); // To split our inputs and Firefox Driver Settings from each-other.
         bool loginSuccessful, stopProcess = false;
         IWebDriver? webDriver = null;
 
         if (!"To perform any operation, you must sign in to your Instagram account.\nDo you want to keep logging into your account? (y/n)".AskToProceed())
-            return; 
+            return;
 
         do
         {
@@ -64,15 +65,22 @@ public class ApplicationRunner
 
     private (bool, IWebDriver?) TryStartDriver()
     {
+        (bool startedSuccessfully, IWebDriver? webDriver) output = (false, null);
+
         try
         {
-            _loginService.ExecuteLogin();
-            return (true, _loginService.WebDriver);
+            output = _loginService.StartWebDriver();
+            if (output.startedSuccessfully)
+            {
+                _loginService.ExecuteLogin();
+            }
+
+            return (true, output.webDriver);
         }
         catch (Exception ex)
         {
             ex.LogException("Error during login execution.");
-            return (false, _loginService.WebDriver);
+            return (false, output.webDriver ?? null);
         }
     }
 
