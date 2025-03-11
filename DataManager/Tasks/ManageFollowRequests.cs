@@ -94,14 +94,13 @@ public class ManageFollowRequests : BaseTaskHandler
             webDriver.EnsureDomLoaded();
 
             IWebElement? requestedButton = webDriver.FindWebElement(By.XPath(XPathConstants.RequestedButton), WebElementPriorityType.Low);
+
             if (requestedButton != null)
             {
+                requestedButton.Click();
+
                 IWebElement? unfollowButton = webDriver.FindWebElement(By.XPath(XPathConstants.UnfollowButton), WebElementPriorityType.Low);
-                if (unfollowButton != null)
-                {
-                    requestedButton.Click();
-                    unfollowButton.Click();
-                }
+                unfollowButton?.Click();
 
                 return true;
             }
