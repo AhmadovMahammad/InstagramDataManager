@@ -207,7 +207,7 @@ public class ManageFollowers : BaseTaskHandler
 
         Console.WriteLine(); // to differ table visualization from above inputs
         analysisData.DisplayAsTable(
-            table => table.Options.EnableCount = false,
+            table => table.EnableDataCount = false,
             "New Followers", "New Following", "Removed Followers", "Removed Following"
         );
     }

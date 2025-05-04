@@ -1,6 +1,4 @@
-﻿using ConsoleTables;
-
-using DataManager.Automation;
+﻿using DataManager.Automation;
 using DataManager.Constant;
 using DataManager.Constant.Enums;
 using DataManager.Core.Services.Contracts;
@@ -8,6 +6,7 @@ using DataManager.Helper.Extension;
 using DataManager.Model;
 
 using OpenQA.Selenium;
+using TableTower.Core.Builder;
 
 namespace DataManager.Core;
 public class ApplicationRunner
@@ -29,6 +28,8 @@ public class ApplicationRunner
 
         if (!"To perform any operation, you must sign in to your Instagram account.\nDo you want to keep logging into your account? (y/n)".AskToProceed())
             return;
+
+        DisplayMenu();
 
         do
         {
@@ -89,8 +90,6 @@ public class ApplicationRunner
         string? input = string.Empty;
         while (!string.Equals(input, "exit", StringComparison.OrdinalIgnoreCase))
         {
-            DisplayMenu();
-
             input = "Command (Enter a number for command or type 'exit' to quit)".GetInput();
             if (string.Equals(input, "exit", StringComparison.OrdinalIgnoreCase))
             {
@@ -119,9 +118,11 @@ public class ApplicationRunner
 
     private void DisplayMenu()
     {
-        _availableOperations.DisplayAsTable((ConsoleTable table) =>
+        _availableOperations.DisplayAsTable((TableOptions options) =>
         {
-            table.Options.EnableCount = false;
+            options.Title = string.Empty;
+            options.WrapData = false;
+            options.EnableDataCount = false;
         }, "Key", "Action", "Description");
     }
 

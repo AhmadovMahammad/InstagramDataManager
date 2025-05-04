@@ -1,35 +1,34 @@
-﻿using ConsoleTables;
-using System.Reflection;
+﻿using System.Reflection;
+using TableTower.Core.Builder;
+using TableTower.Core.Models;
+using TableTower.Core.Rendering;
+using TableTower.Core.Themes;
 
 namespace DataManager.Helper.Extension;
 public static partial class TableExtension
 {
     public static void DisplayAsTable<T>(
         this IEnumerable<T> data,
-        Action<ConsoleTable>? configureTable = null,
+        Action<TableOptions>? configureTable = null,
         params string[] columnNames)
     {
-        var table = new ConsoleTable(columnNames);
-        bool isSimpleType = typeof(T).IsPrimitive || typeof(T) == typeof(string);
+        TableBuilder? builder = null;
 
-        if (isSimpleType)
+        if (columnNames.Length == 0)
         {
-            if (columnNames.Length == data.Count())
-            {
-                var dataArray = data.ToArray();
-                table.AddRow(dataArray.Select(num => num?.ToString()).ToArray());
-            }
+            builder = new TableBuilder(configureTable)
+                .WithData(data)
+                .WithTheme(new RoundedTheme());
         }
         else
         {
-            foreach (var child in data)
-            {
-                PropertyInfo[] properties = child?.GetType().GetProperties() ?? Array.Empty<PropertyInfo>();
-                table.AddRow(properties.Select(prop => prop.GetValue(child)?.ToString()).ToArray());
-            }
+            builder = new TableBuilder(configureTable)
+                .WithColumns(columnNames)
+                .WithData(data, true)
+                .WithTheme(new RoundedTheme());
         }
 
-        configureTable?.Invoke(table);
-        table.Write(Format.Minimal);
+        var table = builder.Build();
+        new ConsoleRenderer().Print(table);
     }
 }
